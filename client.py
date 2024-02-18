@@ -17,7 +17,7 @@ from decorators.decorators import my_logger
 client_logger = logging.getLogger('client')
 
 
-@my_logger
+#@my_logger
 def create_presence_msg(account_name):
     """
     Формирование сообщения о присутствии
@@ -36,7 +36,7 @@ def create_presence_msg(account_name):
     return out
 
 
-@my_logger
+#@my_logger
 def create_exit_message(account_name):
     """
     Формирование сообщения о выходе
@@ -55,7 +55,7 @@ def create_exit_message(account_name):
     return out
 
 
-@my_logger
+#@my_logger
 def create_client_msg(sock, account_name, receiver_name):
     """
     Формирование и отправка на сервер сообщения клиента
@@ -99,15 +99,15 @@ def display_previous_message(sock, account_name, receiver_name):
         sys.exit(1)
 
 
-@my_logger
-def parse_server_msg(sock, user_name):
+#@my_logger
+def parse_server_msg(sock, user_name,user_status):
     """
     Обработчик поступающих сообщений с сервера
     :param sock: клиентский сокет
     :param user_name: имя текущего клиента
     :return:
     """
-    global user_status
+
     while True:
         try:
             message = receive_message(sock)
@@ -130,6 +130,7 @@ def parse_server_msg(sock, user_name):
                 else:
                     print(f'                                  Hoвое сообщение от {message[SENDER]}')
                 client_logger.info(f'Получено сообщение от пользователя {message[SENDER]}: {message[MESSAGE_TEXT]}')
+            #предыдущие сообщения
             elif ACTION in message and message[ACTION] == PREVIOUS and \
                     SENDER in message and message[SENDER] == user_name:
                 for msg in message['messages']:
@@ -150,7 +151,7 @@ def parse_server_msg(sock, user_name):
             break
 
 
-@my_logger
+#@my_logger
 def user_controls_cmd(sock, user_name):
     """
     Обработчик поступающих команд от клиента
@@ -180,7 +181,7 @@ def user_controls_cmd(sock, user_name):
     time.sleep(0.5)
 
 
-@my_logger
+#@my_logger
 def parse_cmd_arguments():
     """
     Парсер аргументов командной строки
@@ -236,7 +237,7 @@ if __name__ == '__main__':
         send_message(client_tcp, presence_msg)
 
         # Получает и разбирает сообщение от сервера
-        server_answer = parse_server_msg(client_tcp, client_name)
+        server_answer = parse_server_msg(client_tcp, client_name,user_status)
 
         client_logger.info(f'Установлено соединение с сервером. Ответ сервера: {server_answer}')
         print(f'Установлено соединение с сервером. Ответ сервера: {server_answer}')
@@ -257,7 +258,7 @@ if __name__ == '__main__':
 
         # Запускает клиентский процесс приёма сообщений
         print('** Запуск потока \'thread-1\' для приёма сообщений **')
-        receiver = threading.Thread(target=parse_server_msg, args=(client_tcp, client_name))
+        receiver = threading.Thread(target=parse_server_msg, args=(client_tcp, client_name,user_status))
         receiver.daemon = True
         receiver.start()
 
