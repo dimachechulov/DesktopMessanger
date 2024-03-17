@@ -30,11 +30,9 @@ def parse_client_msg(message, messages_list,messages_in_route_list, sock, client
     server_logger.debug(f'Разбор сообщения от клиента: {message}')
     print(f'Разбор сообщения от клиента: {message}')
 
-    # возвращает сообщение о присутствии
     if ACTION in message and message[ACTION] == PRESENCE and \
             TIME in message and USER in message:
 
-        # авторизация
         if message[USER][ACCOUNT_NAME] not in names.keys():
             names[message[USER][ACCOUNT_NAME]] = sock
             send_message(sock, RESPONSE_200)
@@ -77,7 +75,7 @@ def parse_client_msg(message, messages_list,messages_in_route_list, sock, client
         del names[message[USER][ACCOUNT_NAME]]
         return
 
-    # возвращает сообщение об ошибкеzzz
+    # возвращает сообщение об ошибке
     else:
         response = RESPONSE_400
         response[ERROR] = 'Некорректный запрос.'
@@ -163,8 +161,6 @@ if __name__ == '__main__':
     all_names = dict()
 
     while True:
-        # Принимает запрос на соединение
-        # Возвращает кортеж (новый TCP-сокет клиента, адрес клиента)
         try:
             client_tcp, client_addr = server_tcp.accept()
         except OSError:

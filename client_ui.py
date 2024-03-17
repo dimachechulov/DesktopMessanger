@@ -131,6 +131,7 @@ class MyApp(QWidget):
     def onBtnClick(self):
         print("Okeyyy")
 
+
     def change_chat(self):
         global user_status
         self.chat.setText(f"               chat with {self.tb_change_chat.text()}\n ")
