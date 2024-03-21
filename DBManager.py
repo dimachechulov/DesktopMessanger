@@ -1,7 +1,7 @@
 from datetime import datetime
 from peewee import *
 import psycopg2
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, or_, and_
 from sqlalchemy.orm import sessionmaker
 
 from models.models import User, Base, Message
@@ -47,12 +47,17 @@ class DBManager:
         message = Message(from_user=from_user.id, to_user=to_user.id, content=content)
         self.session.add(message)
         self.session.commit()
+        return message
 
     def get_messages_by_two_users(self, from_username, to_username):
         from_user = self.session.query(User).filter_by(name=from_username).first()
         to_user = self.session.query(User).filter_by(name=to_username).first()
-        messages_from = self.session.query(Message).filter_by(from_user=from_user.id).filter_by(to_user=to_user.id)
-        return list(messages_from)
+        messages =  self.session.query(Message).filter(
+    or_(
+        and_(Message.from_user == from_user.id, Message.to_user == to_user.id),
+        and_(Message.from_user == to_user.id, Message.to_user == from_user.id)
+    )).order_by(Message.created_at)
+        return list(messages)
 
 
 

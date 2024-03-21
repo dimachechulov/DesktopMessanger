@@ -56,6 +56,7 @@ class ParserClientMessage:
                 SENDER : message[SENDER],
                 DESTINATION : message[DESTINATION],
                 MESSAGE_TEXT : message[MESSAGE_TEXT],
+                "CREATE_AT" : msg.created_at.strftime("%I:%M")
             }
             print(f"Add in route {message}")
             messages_in_route_list.append(msg_json)
@@ -69,18 +70,16 @@ class ParserClientMessage:
             #     if (msg[SENDER] == message[SENDER] and msg[DESTINATION] == message[DESTINATION]) or (msg[SENDER] == message[DESTINATION] and msg[DESTINATION] == message[SENDER]):
             #         print(f'msg[SENDER] : {msg[SENDER]}, message[SENDER]: {message[SENDER]}, msg[DESTINATION]: {msg[DESTINATION]}, message[DESTINATION]: {message[DESTINATION]}')
             #         list_of_messages.append(msg)
-            messages_from = db.get_messages_by_two_users(from_username=message[SENDER], to_username=message[DESTINATION])
-            messages_to = db.get_messages_by_two_users(from_username=message[DESTINATION], to_username=message[SENDER])
-            messages_content_from = [msg.content for msg in messages_from]
-            messages_content_to = [msg.content for msg in messages_to]
+            messages = db.get_messages_by_two_users(from_username=message[SENDER], to_username=message[DESTINATION])
+            messages_json = [{'CONTENT' : msg.content, SENDER : msg.from_user, DESTINATION : msg.to_user, 'CREATE_AT': msg.created_at.strftime("%I:%M")} for msg in messages]
             response={
                 ACTION:PREVIOUS,
                 SENDER:message[SENDER],
                 DESTINATION : message[DESTINATION],
-                'MESSAGE_TEXT_FROM':messages_content_from,
-                'MESSAGE_TEXT_TO' : messages_content_to
+                'MESSAGE' :messages_json
             }
             send_message(sock, response)
+            print(f"Server responce {response}")
             return
 
         # выход клиента
@@ -122,7 +121,9 @@ class Server:
                 ACTION: MESSAGE,
                 SENDER:message[SENDER],
                 DESTINATION : message[DESTINATION],
-                MESSAGE_TEXT:message[MESSAGE_TEXT]
+                MESSAGE_TEXT:message[MESSAGE_TEXT],
+                "CREATE_AT": message["CREATE_AT"]
+
             }
             send_message(names[message[DESTINATION]], responce)
             print(f'Отправлено сообщение пользователю {message[DESTINATION]} '
@@ -130,8 +131,10 @@ class Server:
             server_logger.info(f'Отправлено сообщение пользователю {message[DESTINATION]} '
                                f'от пользователя {message[SENDER]}.')
         elif message[DESTINATION] in names and names[message[SENDER]] not in clients:
+            print(f"ConnectionError")
             raise ConnectionError
         else:
+            print(f"ConnectionError")
             server_logger.error(
                 f'Пользователь {message.to_user.name} не зарегистрирован на сервере, '
                 f'отправка сообщения невозможна.')

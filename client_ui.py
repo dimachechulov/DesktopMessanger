@@ -1,5 +1,5 @@
 # подключаем библиотеки
-
+import datetime
 import sys
 import json
 import time
@@ -25,7 +25,7 @@ from decorators.decorators import my_logger
 from client.client import *
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QLineEdit, QWidget, QStackedWidget, \
-    QVBoxLayout
+    QVBoxLayout, QTextBrowser
 from PyQt5 import QtCore
 
 from configs.utils import parse_cmd_arguments
@@ -173,7 +173,7 @@ class MyApp(QWidget):
 
         self.setGeometry(800, 800, 800, 650)
         self.setWindowTitle("Pyqt5 Tutorial")
-        self.chat = QLabel(self)
+        self.chat = QTextBrowser(self)
         self.chat.setText("")
         self.chat.move(5, 5)
         self.chat.resize(400, 500)
@@ -214,7 +214,8 @@ class MyApp(QWidget):
 
     def create_client_msg(self):
         message_str = self.tb_send_message.text()
-        self.chat.setText(self.chat.text() + f'[you]: {message_str}\n')
+        now = datetime.datetime.now().strftime("%I:%M")
+        self.chat.append(f'{now}[you]: {message_str}')
         self.client.create_client_msg(message_str)
     def change_chat(self):
         self.chat.setText(f"               chat with {self.tb_change_chat.text()}\n ")

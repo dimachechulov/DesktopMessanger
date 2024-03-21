@@ -50,21 +50,27 @@ class ParserServerMessage(QThread):
                         SENDER in message and DESTINATION in message \
                         and MESSAGE_TEXT in message and message[DESTINATION] == self.client.user.name:
                     if message[SENDER] == self.client.receiver_name:
-                        self.ex.main_window.chat.setText(self.ex.main_window.chat.text() +f'[{message[SENDER]}]: {message[MESSAGE_TEXT]}\n')
-                        print(f'[{message[SENDER]}]: {message[MESSAGE_TEXT]}')
+                        self.ex.main_window.chat.append(f'{message["CREATE_AT"]}[{message[SENDER]}]: {message[MESSAGE_TEXT]}')
+                        print(f'{message["CREATE_AT"]}[{message[SENDER]}]: {message[MESSAGE_TEXT]}')
                     else:
                         print(f'                                  Hoвое сообщение от {message[SENDER]}')
                     #client_logger.info(f'Получено сообщение от пользователя {message[SENDER]}: {message[MESSAGE_TEXT]}')
                 # предыдущие сообщения
                 elif ACTION in message and message[ACTION] == PREVIOUS and \
                         SENDER in message and message[SENDER] == self.client.user.name:
-                    result = (f"               chat with {self.ex.client.receiver_name}\n ")
-                    for msg in message['MESSAGE_TEXT_FROM']:
-                        result+=f'[you] {msg}\n'
-                    for msg in message['MESSAGE_TEXT_TO']:
-                        result+=f'[{message[SENDER]}] {msg}\n'
-                    self.ex.main_window.chat.setText(result)
-
+                    result=""
+                    messages = message['MESSAGE']
+                    for index in range(len(messages)):
+                        if messages[index][SENDER] == self.client.user.id:
+                            result += f'{messages[index]["CREATE_AT"]}[you] {messages[index]["CONTENT"]}'
+                        else:
+                            result+=f'{messages[index]["CREATE_AT"]}[{message[SENDER]}] {messages[index]["CONTENT"]}'
+                        if index +1  != len(messages):
+                            result +='\n'
+                    try:
+                        self.ex.main_window.chat.append(result)
+                    except Exception as ex:
+                        print(ex)
 
 
                 # некорректное сообщение
