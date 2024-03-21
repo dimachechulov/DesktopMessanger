@@ -1,7 +1,11 @@
 import json
 
 from configs.default import ENCODING, MAX_PACKAGE_LENGTH
+import argparse
+import sys
 
+from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, SENDER, DESTINATION, RESPONSE, PRESENCE, ERROR, \
+    DEFAULT_IP_ADDRESS, DEFAULT_PORT, MESSAGE, MESSAGE_TEXT, EXIT, PREVIOUS
 
 def receive_message(sock):
     """
@@ -26,6 +30,44 @@ def receive_message(sock):
         raise ValueError
 
 
+def server_parse_cmd_arguments():
+    """
+    Парсер аргументов командной строки
+    :return: ip-адрес и порт сервера
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', default=DEFAULT_PORT, type=int, nargs='?')
+    parser.add_argument('-a', default='', nargs='?')
+
+    namespace = parser.parse_args(sys.argv[1:])
+    addr = namespace.a
+    port = namespace.p
+
+    # Валидация номера порта
+    if port < 1024 or port > 65535:
+        sys.exit(1)
+
+    return addr, port
+def parse_cmd_arguments():
+    """
+    Парсер аргументов командной строки
+    :return: ip-адрес и порт сервера, режим клиента
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', default=DEFAULT_IP_ADDRESS, nargs='?')
+    parser.add_argument('-p', default=DEFAULT_PORT, type=int, nargs='?')
+    parser.add_argument('-n', '--name', default='None', nargs='?')
+
+    namespace = parser.parse_args(sys.argv[1:])
+    addr = namespace.a
+    port = namespace.p
+    name = namespace.name
+
+    # проверим подходящий номер порта
+    if port < 1024 or port > 65535:
+        sys.exit(1)
+
+    return addr, port, name
 def send_message(sock, message):
     """
     Отправка сообщения

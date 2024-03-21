@@ -6,6 +6,7 @@ import argparse
 import time
 import logging
 import logs.server_log_config
+from DBManager import DBManager
 
 from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, SENDER, DESTINATION, RESPONSE, PRESENCE, ERROR, \
     DEFAULT_PORT, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT, EXIT, RESPONSE_200, RESPONSE_400, PREVIOUS
@@ -18,7 +19,7 @@ server_logger = logging.getLogger('server')
 class ParserClientMessage:
     @MyLogger
     @staticmethod
-    def parse_client_msg(message, messages_list,messages_in_route_list, sock, clients_list, names):
+    def parse_client_msg(message, messages_list,messages_in_route_list, sock, clients_list, names, db):
         """
         Обработчик сообщений клиентов
         :param message: словарь сообщения
@@ -49,21 +50,35 @@ class ParserClientMessage:
         elif ACTION in message and message[ACTION] == MESSAGE and \
                 SENDER in message and DESTINATION in message and \
                 MESSAGE_TEXT in message and TIME in message:
-            messages_list.append(message)
-            messages_in_route_list.append(message)
+            msg = db.create_message(from_username=message[SENDER], to_username=message[DESTINATION], content=message[MESSAGE_TEXT])
+            # messages_list.append(message)
+            msg_json = {
+                SENDER : message[SENDER],
+                DESTINATION : message[DESTINATION],
+                MESSAGE_TEXT : message[MESSAGE_TEXT],
+            }
+            print(f"Add in route {message}")
+            messages_in_route_list.append(msg_json)
             return
 
         elif ACTION in message and message[ACTION] == PREVIOUS and \
             SENDER in message and DESTINATION in message:
             list_of_messages = []
-            for msg in messages_list:
-                if (msg[SENDER] == message[SENDER] and msg[DESTINATION] == message[DESTINATION]) or (msg[SENDER] == message[DESTINATION] and msg[DESTINATION] == message[SENDER]):
-                    print(f'msg[SENDER] : {msg[SENDER]}, message[SENDER]: {message[SENDER]}, msg[DESTINATION]: {msg[DESTINATION]}, message[DESTINATION]: {message[DESTINATION]}')
-                    list_of_messages.append(msg)
+
+            # for msg in messages_list:
+            #     if (msg[SENDER] == message[SENDER] and msg[DESTINATION] == message[DESTINATION]) or (msg[SENDER] == message[DESTINATION] and msg[DESTINATION] == message[SENDER]):
+            #         print(f'msg[SENDER] : {msg[SENDER]}, message[SENDER]: {message[SENDER]}, msg[DESTINATION]: {msg[DESTINATION]}, message[DESTINATION]: {message[DESTINATION]}')
+            #         list_of_messages.append(msg)
+            messages_from = db.get_messages_by_two_users(from_username=message[SENDER], to_username=message[DESTINATION])
+            messages_to = db.get_messages_by_two_users(from_username=message[DESTINATION], to_username=message[SENDER])
+            messages_content_from = [msg.content for msg in messages_from]
+            messages_content_to = [msg.content for msg in messages_to]
             response={
                 ACTION:PREVIOUS,
                 SENDER:message[SENDER],
-                'messages':list_of_messages
+                DESTINATION : message[DESTINATION],
+                'MESSAGE_TEXT_FROM':messages_content_from,
+                'MESSAGE_TEXT_TO' : messages_content_to
             }
             send_message(sock, response)
             return
@@ -91,6 +106,7 @@ class Server:
         self.all_messages = []
         self.all_names = dict()
         self.server_tcp = server_tcp
+        self.DBManager = DBManager()
     def route_client_msg(self,message, names, clients):
         """
         Адресная отправка сообщений.
@@ -100,18 +116,24 @@ class Server:
         :return:
         """
         print(f"message in route: {message}")
-        print(f"message destination: {message[DESTINATION]} message sender: {message[SENDER]}")
+        print(f"message to: {message[DESTINATION]} message sender: {message[SENDER]}")
         if message[DESTINATION] in names and names[message[DESTINATION]] in clients:
-            send_message(names[message[DESTINATION]], message)
+            responce = {
+                ACTION: MESSAGE,
+                SENDER:message[SENDER],
+                DESTINATION : message[DESTINATION],
+                MESSAGE_TEXT:message[MESSAGE_TEXT]
+            }
+            send_message(names[message[DESTINATION]], responce)
             print(f'Отправлено сообщение пользователю {message[DESTINATION]} '
-                               f'от пользователя {message[SENDER]}.')
+                               f'от пользователя {message[DESTINATION]}.')
             server_logger.info(f'Отправлено сообщение пользователю {message[DESTINATION]} '
                                f'от пользователя {message[SENDER]}.')
-        elif message[DESTINATION] in names and names[message[DESTINATION]] not in clients:
+        elif message[DESTINATION] in names and names[message[SENDER]] not in clients:
             raise ConnectionError
         else:
             server_logger.error(
-                f'Пользователь {message[DESTINATION]} не зарегистрирован на сервере, '
+                f'Пользователь {message.to_user.name} не зарегистрирован на сервере, '
                 f'отправка сообщения невозможна.')
 
     def run(self):
@@ -141,11 +163,16 @@ class Server:
                 for r_sock in r_clients:
                     try:
                         ParserClientMessage.parse_client_msg(receive_message(r_sock), self.all_messages, self.all_messages_in_router, r_sock,
-                                         self.all_clients, self.all_names)
+                                         self.all_clients, self.all_names, self.DBManager)
                     except Exception as ex:
                         server_logger.error(f'Клиент отключился от сервера. '
                                             f'Тип исключения: {type(ex).__name__}, аргументы: {ex.args}')
+
                         self.all_clients.remove(r_sock)
+                        inverted_all_names = {v: k for k, v in self.all_names.items()}
+                        key_to_remove = inverted_all_names.pop(r_sock)
+                        del self.all_names[key_to_remove]
+
             # print(f"All messages: {all_messages}")
             # print(f"All messages in router: {all_messages_in_router}")
             # Роутинг сообщений адресатам

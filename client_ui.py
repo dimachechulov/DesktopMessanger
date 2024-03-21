@@ -10,93 +10,169 @@ import threading
 
 from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QFont
+from PyQt5 import QtGui
+from sqlalchemy.exc import DataError
 
 import logs.client_log_config
+from auth import AuthService
+from client.ParserServerMessage import ParserServerMessage
 
 from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, SENDER, DESTINATION, RESPONSE, PRESENCE, ERROR, \
     DEFAULT_IP_ADDRESS, DEFAULT_PORT, MESSAGE, MESSAGE_TEXT, EXIT, PREVIOUS
 from configs.utils import send_message, receive_message
 from decorators.decorators import my_logger
-from client import *
 
+from client.client import *
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QLineEdit, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QLineEdit, QWidget, QStackedWidget, \
+    QVBoxLayout
 from PyQt5 import QtCore
 
-
-user_status=None
-def onBtnClick():
-    print("Hy Button is clicked!")
+from configs.utils import parse_cmd_arguments
 
 
-class MyFunctionThread(QThread):
-    def __init__(self,sock, user_name,ex):
+class LoginWidget(QWidget):
+    def __init__(self, stacked_widget,  client):
+        self.reg_service = AuthService()
+        self.stacked_widget = stacked_widget
+        self.client = client
         super().__init__()
-        self.sock=sock
-        self.user_name = user_name
+        self.InitUi()
 
-        self.ex = ex
+    def InitUi(self):
+        self.setWindowTitle('Регистрация пользователя')
+        self.setGeometry(800, 800, 800, 650)
+        self.error_label = QLabel('')
+        self.username_label = QLabel('Имя пользователя:')
+        self.username_input = QLineEdit()
 
-    def run(self):
-        while True:
-            try:
-                message = receive_message(self.sock)
+        self.password_label = QLabel('Пароль:')
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.Password)
+        self.login_button = QPushButton('Войти')
+        self.login_button.clicked.connect(self.login_click)
 
-                # приветственное сообщение
-                if RESPONSE in message:
-                    if message[RESPONSE] == 200:
-                        client_logger.debug(f'Получено приветственное сообщение от сервера: {message[RESPONSE]} OK')
-                        return f'{message[RESPONSE]} OK'
-                    elif message[RESPONSE] == 400:
-                        client_logger.debug(f'Получено сообщение от сервера: {message[RESPONSE]} {message[ERROR]}')
-                        return f'{message[RESPONSE]} {message[ERROR]}'
+        self.go_to_login_button = QPushButton('У меня нет аккаунта')
+        self.go_to_login_button.clicked.connect(self.go_to_register)
+        layout = QVBoxLayout()
+        layout.addWidget(self.error_label)
+        layout.addWidget(self.username_label)
+        layout.addWidget(self.username_input)
+        layout.addWidget(self.password_label)
+        layout.addWidget(self.password_input)
+        layout.addWidget(self.login_button)
+        layout.addWidget(self.go_to_login_button)
+        self.setLayout(layout)
 
-                # сообщение от другого клиента
-                elif ACTION in message and message[ACTION] == MESSAGE and \
-                        SENDER in message and DESTINATION in message \
-                        and MESSAGE_TEXT in message and message[DESTINATION] == self.user_name:
-                    if message[SENDER] == user_status:
-                        self.ex.chat.setText(self.ex.chat.text() +f'[{message[SENDER]}]: {message[MESSAGE_TEXT]}\n')
-                        print(f'[{message[SENDER]}]: {message[MESSAGE_TEXT]}')
-                    else:
-                        print(f'                                  Hoвое сообщение от {message[SENDER]}')
-                    client_logger.info(f'Получено сообщение от пользователя {message[SENDER]}: {message[MESSAGE_TEXT]}')
-                # предыдущие сообщения
-                elif ACTION in message and message[ACTION] == PREVIOUS and \
-                        SENDER in message and message[SENDER] == self.user_name:
-                    result = (f"               chat with {self.ex.receiver_name}\n ")
-                    for msg in message['messages']:
-                        if self.user_name == msg[SENDER]:
-                            result+=f'[you] {msg[MESSAGE_TEXT]}\n'
-                        else:
-                            result+=f'[{msg[SENDER]}] {msg[MESSAGE_TEXT]}'
-                    self.ex.chat.setText(result)
+    def login_click(self):
+        username = self.username_input.text()
+        password = self.password_input.text()
 
 
+        try:
+            self.client.token,  self.client.user  =  self.reg_service.login_user(username, password)
+            self.client.connect_server()
+        except ValueError as err:
+            print(err.args)
+            self.error_label.setText(err.args[0])
+            return
+        except DataError as err:
+            print(err.args)
+            self.error_label.setText("Err input in fields")
+            return
+        except Exception as ex:
+            print(ex.args)
+            return
+        self.stacked_widget.setCurrentIndex(2)
 
-                # некорректное сообщение
-                else:
-                    client_logger.error(f'Получено некорректное сообщение с сервера: {message}')
+    def go_to_register(self):
+        self.stacked_widget.setCurrentIndex(0)
 
-            # ошибка соединения с сервером
-            except (OSError, ConnectionError, ConnectionAbortedError, ConnectionResetError, json.JSONDecodeError):
-                client_logger.critical(f'Потеряно соединение с сервером.')
-                break
+
+
+class RegistrationWidget(QWidget):
+    def __init__(self, stacked_widget, client):
+        self.reg_service = AuthService()
+        self.stacked_widget = stacked_widget
+        self.client = client
+        super().__init__()
+        self.InitUi()
+
+    def InitUi(self):
+        self.setWindowTitle('Регистрация пользователя')
+        self.setGeometry(800, 800, 800, 650)
+        self.error_label = QLabel('')
+        self.username_label = QLabel('Имя пользователя:')
+        self.username_input = QLineEdit()
+
+        self.password_label = QLabel('Пароль:')
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.Password)
+
+        self.email_label = QLabel('Email:')
+        self.email_input = QLineEdit()
+
+        self.age_label = QLabel('Возраст:')
+        self.age_input = QLineEdit()
+
+        self.register_button = QPushButton('Зарегистрироваться')
+        self.register_button.clicked.connect(self.register_click)
+
+
+        self.go_to_login_button = QPushButton('У меня есть уже аккаунт')
+        self.go_to_login_button.clicked.connect(self.go_to_login)
+        layout = QVBoxLayout()
+        layout.addWidget(self.error_label)
+        layout.addWidget(self.username_label)
+        layout.addWidget(self.username_input)
+        layout.addWidget(self.password_label)
+        layout.addWidget(self.password_input)
+        layout.addWidget(self.email_label)
+        layout.addWidget(self.email_input)
+        layout.addWidget(self.age_label)
+        layout.addWidget(self.age_input)
+        layout.addWidget(self.register_button)
+        layout.addWidget(self.go_to_login_button)
+        self.setLayout(layout)
+
+    def register_click(self):
+        username = self.username_input.text()
+        password = self.password_input.text()
+        email = self.email_input.text()
+        age = self.age_input.text()
+
+        try:
+            self.client.token,  self.client.user = self.reg_service.register_user(username,password, email, age)
+            self.client.connect_server()
+        except ValueError as err:
+            print(err.args)
+            self.error_label.setText(err.args[0])
+            return
+        except DataError as err:
+            print(err.args)
+            self.error_label.setText("Err input in fields")
+            return
+        except Exception as ex:
+            print(ex.args)
+            return
+        self.stacked_widget.setCurrentIndex(2)
+
+    def go_to_login(self):
+        self.stacked_widget.setCurrentIndex(1)
 
 
 class MyApp(QWidget):
-    def __init__(self,sock, user_name):
+    def __init__(self, stacked_widget, client):
+
         super().__init__()
-        self.sock=sock
-        self.user_name=user_name
-        self.receiver_name=None
+        self.stacked_widget = stacked_widget
+        self.client = client
         self.initUI()
 
     def initUI(self):
 
         self.setGeometry(800, 800, 800, 650)
         self.setWindowTitle("Pyqt5 Tutorial")
-        # Label Text
         self.chat = QLabel(self)
         self.chat.setText("")
         self.chat.move(5, 5)
@@ -121,114 +197,61 @@ class MyApp(QWidget):
         self.tb_change_chat.move(405, 40)
         self.tb_change_chat.resize(250, 50)
         self.name = QLabel(self)
-        self.name.setText(f"You name is {self.user_name}")
+        if self.client.user:
+            self.name.setText(f"You name is {self.client.user.name}")
+        else:
+            self.name.setText(f"You name is anom")
         self.name.move(410, 400)
         self.name.resize(200, 40)
         self.name.setFont(QFont('Arial', 16))
+        self.button2 = QPushButton(self)
+        self.button2.setText("TEmp")
+        self.button2.move(405, 205)
+        self.button2.resize(250, 40)
+        self.button2.clicked.connect(self.show_page1)
 
 
 
-    def onBtnClick(self):
-        print("Okeyyy")
-
-
-    def change_chat(self):
-        global user_status
-        self.chat.setText(f"               chat with {self.tb_change_chat.text()}\n ")
-
-        self.receiver_name=self.tb_change_chat.text()
-        display_previous_message(self.sock,self.user_name,self.receiver_name)
-        user_status = self.receiver_name
-
-    #GOTOLCLIENT
-    def display_previous_message(self, sock, account_name, receiver_name):
-        message_dict = {
-            ACTION: PREVIOUS,
-            SENDER: account_name,
-            DESTINATION: receiver_name,
-        }
-        try:
-            send_message(sock, message_dict)
-            client_logger.info(f'Запрошено сообщения с {receiver_name}')
-        except Exception:
-            client_logger.critical('Потеряно соединение с сервером.')
-            sys.exit(1)
     def create_client_msg(self):
-        """
-        Формирование и отправка на сервер сообщения клиента
-        :param sock: клиентский сокет
-        :param account_name: строка псевдонима
-        :return message_dict: словарь сообщения клиента
-        """
-
         message_str = self.tb_send_message.text()
-        message_dict = {
-            ACTION: MESSAGE,
-            TIME: time.time(),
-            SENDER: self.user_name,
-            DESTINATION: self.receiver_name,
-            MESSAGE_TEXT: message_str
-        }
-        client_logger.debug(f'Сформировано сообщение: {message_dict}')
         self.chat.setText(self.chat.text() + f'[you]: {message_str}\n')
-        try:
-            send_message(self.sock, message_dict)
-            client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
-        except Exception:
-            client_logger.critical('Потеряно соединение с сервером.')
-            sys.exit(1)
+        self.client.create_client_msg(message_str)
+    def change_chat(self):
+        self.chat.setText(f"               chat with {self.tb_change_chat.text()}\n ")
+        self.client.receiver_name = self.tb_change_chat.text()
+        self.client.display_previous_message()
+
+    def show_page1(self):
+        self.stacked_widget.setCurrentIndex(2)
+
+
+
+class MainWindow(QMainWindow):
+    def __init__(self, client):
+        super().__init__()
+        self.client = client
+        self.stacked_widget = QStackedWidget()
+        self.page1 = RegistrationWidget(self.stacked_widget, client)
+        self.page2 = LoginWidget(self.stacked_widget, client)
+        self.main_window = MyApp(self.stacked_widget, client)
+
+        self.stacked_widget.addWidget(self.page1)
+        self.stacked_widget.addWidget(self.page2)
+        self.stacked_widget.addWidget(self.main_window)
+        self.setCentralWidget(self.stacked_widget)
+
+
+
 def main():
     # Получает ip-адрес, порт сервера, режим клиента из командной строки
     server_addr, server_port, client_name = parse_cmd_arguments()
-    all_messages = []
-    global user_status  # none if you choose friend or name of friend which chose
-    user_status = None
-    client_name = input('Введите имя пользователя: ')
-
-    client_logger.info(f'Запущен клиент с парамертами: '
-                       f'адрес сервера: {server_addr}, порт: {server_port}, имя пользователя: {client_name}')
-    print(f'Запущен клиент с парамертами: '
-          f'адрес сервера: {server_addr}, порт: {server_port}, имя пользователя: {client_name}')
-
-    # Начало работы, приветственное сообщение
-    try:
-        # Создается TCP-сокет клиента
-        client_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # Соединяется с сервером
-        client_tcp.connect((server_addr, server_port))
-
-        # Формирует сообщение о присутствии
-        presence_msg = create_presence_msg(client_name)
-
-        # Отправляет сообщение о присутствии серверу
-        send_message(client_tcp, presence_msg)
-
-        # Получает и разбирает сообщение от сервера
-        server_answer = parse_server_msg(client_tcp, client_name, user_status)
-
-        client_logger.info(f'Установлено соединение с сервером. Ответ сервера: {server_answer}')
-        print(f'Установлено соединение с сервером. Ответ сервера: {server_answer}')
-
-    except json.JSONDecodeError:
-        client_logger.error('Не удалось декодировать полученную json-строку')
-        print('Не удалось декодировать полученную json-строку')
-        sys.exit(1)
-
-    except ConnectionRefusedError:
-        client_logger.critical(f'Не удалось подключиться к серверу {server_addr}:{server_port}, '
-                               f'запрос на подключение отклонён')
-        print(f'Не удалось подключиться к серверу {server_addr}:{server_port}, '
-              f'запрос на подключение отклонён')
-
-    # Обмен сообщениями
-    else:
-        app = QApplication(sys.argv)
-        ex = MyApp(client_tcp, client_name)
-        ex.show()
-        worker = MyFunctionThread(client_tcp, client_name,ex)
-        worker.start()
-        sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    client = Client(server_addr, server_port)
+    ex = MainWindow(client)
+    ex.show()
+    worker = ParserServerMessage(client,ex)
+    worker.start()
+    sys.exit(app.exec_())
 
 
 
