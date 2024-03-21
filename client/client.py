@@ -150,6 +150,25 @@ class Client:
         #client_logger.debug(f'Сформировано {EXIT} сообщение для пользователя {self.user_name}')
         return out
 
+    def get_user_by_name(self, name):
+        message_dict = {
+            ACTION: 'GET_USER_BY_NAME',
+            TIME: time.time(),
+            'NAME': name,
+        }
+        print(f'Сформировано сообщение: {message_dict}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, message_dict)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+
     def __del__(self):
         if self.sock:
             exit_msg = self.create_exit_message()

@@ -1,46 +1,34 @@
 from datetime import datetime
 import sys
+
+from PyQt5.QtCore import QModelIndex
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import (QApplication, QWidget
-, QLineEdit, QTextBrowser, QPushButton, QVBoxLayout)
+, QLineEdit, QTextBrowser, QPushButton, QVBoxLayout, QListView)
 
-class MyApp(QWidget):
 
+class Window(QWidget):
     def __init__(self):
         super().__init__()
-        self.initUI()
+        mainlayout = QVBoxLayout()
+        self.setLayout(mainlayout)
+        self.listView = QListView()
+        self.model = QStandardItemModel()
+        self.listView.setModel(self.model)
+        self.listView.setObjectName("listView-1")
+        mainlayout.addWidget(self.listView)
 
-    def initUI(self):
-        self.le = QLineEdit()
-        self.le.returnPressed.connect(self.append_text)
+        values = ['one', 'two', 'three']
+        for i in values:
+            self.model.appendRow(QStandardItem(i))
 
-        self.tb = QTextBrowser()
-        self.tb.setAcceptRichText(True)
-        self.tb.setOpenExternalLinks(True)
+        self.listView.clicked[QModelIndex].connect(self.on_clicked)
 
-        self.clear_btn = QPushButton('Clear')
-        self.clear_btn.pressed.connect(self.clear_text)
+    def on_clicked(self, index):
+        item = self.model.itemFromIndex(index)
+        print(item.text())
 
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.le, 0)
-        vbox.addWidget(self.tb, 1)
-        vbox.addWidget(self.clear_btn, 2)
-
-        self.setLayout(vbox)
-
-        self.setWindowTitle('QTextBrowser')
-        self.setGeometry(300, 300, 300, 300)
-        self.show()
-
-    def append_text(self):
-        print()
-        text = self.le.text()
-        self.tb.append(text)
-        self.le.clear()
-
-    def clear_text(self):
-        self.tb.clear()
-
-
-date = datetime.now()
-
-print(date.strftime("%d %B %I:%M%p"))
+app = QApplication(sys.argv)
+window = Window()
+window.show()
+sys.exit(app.exec_())

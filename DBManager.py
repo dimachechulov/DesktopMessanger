@@ -41,6 +41,9 @@ class DBManager:
     def get_user_by_name(self, username):
         return self.session.query(User).filter_by(name=username).first()
 
+    def find_users_by_name(self, username):
+        return self.session.query(User).filter(User.name.startswith(username)).all()
+
     def create_message(self, from_username, to_username, content):
         from_user = self.session.query(User).filter_by(name=from_username).first()
         to_user = self.session.query(User).filter_by(name=to_username).first()

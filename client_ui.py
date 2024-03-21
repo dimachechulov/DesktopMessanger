@@ -8,8 +8,8 @@ import argparse
 import logging
 import threading
 
-from PyQt5.QtCore import QThread
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import QThread, QModelIndex
+from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
 from PyQt5 import QtGui
 from sqlalchemy.exc import DataError
 
@@ -25,7 +25,7 @@ from decorators.decorators import my_logger
 from client.client import *
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QLineEdit, QWidget, QStackedWidget, \
-    QVBoxLayout, QTextBrowser
+    QVBoxLayout, QTextBrowser, QListView
 from PyQt5 import QtCore
 
 from configs.utils import parse_cmd_arguments
@@ -189,10 +189,17 @@ class MyApp(QWidget):
         self.tb_send_message.move(150, 505)
         self.tb_send_message.resize(250, 50)
         self.btn_change_chat = QPushButton(self)
-        self.btn_change_chat.setText("Сменить чат")
+        self.btn_change_chat.setText("Поиск чата")
         self.btn_change_chat.move(405, 5)
         self.btn_change_chat.resize(250, 40)
-        self.btn_change_chat.clicked.connect(self.change_chat)
+        self.btn_change_chat.clicked.connect(self.get_users_by_name)
+        self.listUsers = QListView(self)
+        self.listUsers.move(405, 200)
+        self.listUsers.resize(250, 250)
+        self.model = QStandardItemModel()
+        self.listUsers.clicked[QModelIndex].connect(self.change_chat)
+        self.listUsers.setModel(self.model)
+        self.listUsers.setObjectName("listView-1")
         self.tb_change_chat = QLineEdit(self)
         self.tb_change_chat.move(405, 40)
         self.tb_change_chat.resize(250, 50)
@@ -204,11 +211,11 @@ class MyApp(QWidget):
         self.name.move(410, 400)
         self.name.resize(200, 40)
         self.name.setFont(QFont('Arial', 16))
-        self.button2 = QPushButton(self)
-        self.button2.setText("TEmp")
-        self.button2.move(405, 205)
-        self.button2.resize(250, 40)
-        self.button2.clicked.connect(self.show_page1)
+        # self.button2 = QPushButton(self)
+        # self.button2.setText("TEmp")
+        # self.button2.move(405, 205)
+        # self.button2.resize(250, 40)
+        # self.button2.clicked.connect(self.show_page1)
 
 
 
@@ -217,9 +224,13 @@ class MyApp(QWidget):
         now = datetime.datetime.now().strftime("%I:%M")
         self.chat.append(f'{now}[you]: {message_str}')
         self.client.create_client_msg(message_str)
-    def change_chat(self):
-        self.chat.setText(f"               chat with {self.tb_change_chat.text()}\n ")
-        self.client.receiver_name = self.tb_change_chat.text()
+
+    def get_users_by_name(self):
+        name = self.tb_change_chat.text()
+        self.client.get_user_by_name(name)
+    def change_chat(self, index):
+        self.chat.setText(f"               chat with {self.model.itemFromIndex(index).text()}\n ")
+        self.client.receiver_name = self.model.itemFromIndex(index).text()
         self.client.display_previous_message()
 
     def show_page1(self):

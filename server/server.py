@@ -64,12 +64,6 @@ class ParserClientMessage:
 
         elif ACTION in message and message[ACTION] == PREVIOUS and \
             SENDER in message and DESTINATION in message:
-            list_of_messages = []
-
-            # for msg in messages_list:
-            #     if (msg[SENDER] == message[SENDER] and msg[DESTINATION] == message[DESTINATION]) or (msg[SENDER] == message[DESTINATION] and msg[DESTINATION] == message[SENDER]):
-            #         print(f'msg[SENDER] : {msg[SENDER]}, message[SENDER]: {message[SENDER]}, msg[DESTINATION]: {msg[DESTINATION]}, message[DESTINATION]: {message[DESTINATION]}')
-            #         list_of_messages.append(msg)
             messages = db.get_messages_by_two_users(from_username=message[SENDER], to_username=message[DESTINATION])
             messages_json = [{'CONTENT' : msg.content, SENDER : msg.from_user, DESTINATION : msg.to_user, 'CREATE_AT': msg.created_at.strftime("%I:%M")} for msg in messages]
             response={
@@ -81,6 +75,20 @@ class ParserClientMessage:
             send_message(sock, response)
             print(f"Server responce {response}")
             return
+
+        elif ACTION in message and message[ACTION] == 'GET_USER_BY_NAME' and \
+                'NAME' in message:
+            users = db.find_users_by_name(message['NAME'])
+            users_json = [{'NAME' : user.name}for user in users]
+            response={
+                ACTION:'GET_USER_BY_NAME',
+                'USERS' :users_json
+            }
+            send_message(sock, response)
+            print(f"Server responce get user{response}")
+            return
+
+
 
         # выход клиента
         elif ACTION in message and message[ACTION] == EXIT and \

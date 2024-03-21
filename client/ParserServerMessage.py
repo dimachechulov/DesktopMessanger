@@ -7,7 +7,7 @@ import logging
 import threading
 
 from PyQt5.QtCore import QThread
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QStandardItem
 
 import logs.client_log_config
 
@@ -71,6 +71,11 @@ class ParserServerMessage(QThread):
                         self.ex.main_window.chat.append(result)
                     except Exception as ex:
                         print(ex)
+
+                elif ACTION in message and message[ACTION] == 'GET_USER_BY_NAME' and \
+                        'USERS' in message:
+                    for user in message['USERS']:
+                        self.ex.main_window.model.appendRow(QStandardItem(user['NAME']))
 
 
                 # некорректное сообщение
