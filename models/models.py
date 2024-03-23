@@ -25,6 +25,19 @@ class Message(Base):
     content = Column(String, nullable=False)
 
 
+class Query(Base):
+    __tablename__ = 'query'
+    id = Column(Integer, primary_key=True)
+    from_user = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    to_user = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+
+class Friend(Base):
+    __tablename__ = 'friend'
+    id = Column(Integer, primary_key=True)
+    user1 = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    user2 = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+
+
 
 
 

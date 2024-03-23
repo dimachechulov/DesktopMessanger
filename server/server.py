@@ -7,103 +7,18 @@ import time
 import logging
 import logs.server_log_config
 from DBManager import DBManager
+from auth.auth import AuthService
 
 from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, SENDER, DESTINATION, RESPONSE, PRESENCE, ERROR, \
     DEFAULT_PORT, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT, EXIT, RESPONSE_200, RESPONSE_400, PREVIOUS
 from configs.utils import send_message, receive_message,  server_parse_cmd_arguments
 from decorators.decorators import MyLogger
+from ParserClientMessage import ParserClientMessage
 
 # Инициализация серверного логера
 server_logger = logging.getLogger('server')
 
-class ParserClientMessage:
-    @MyLogger
-    @staticmethod
-    def parse_client_msg(message, messages_list,messages_in_route_list, sock, clients_list, names, db):
-        """
-        Обработчик сообщений клиентов
-        :param message: словарь сообщения
-        :param messages_list: список сообщений
-        :param sock: клиентский сокет
-        :param clients_list: список клиентских сокетов
-        :param names: список зарегистрированных клиентов
-        :return: словарь ответа
-        """
-        server_logger.debug(f'Разбор сообщения от клиента: {message}')
-        print(f'Разбор сообщения от клиента: {message}')
 
-        if ACTION in message and message[ACTION] == PRESENCE and \
-                TIME in message and USER in message:
-
-            if message[USER][ACCOUNT_NAME] not in names.keys():
-                names[message[USER][ACCOUNT_NAME]] = sock
-                send_message(sock, RESPONSE_200)
-            else:
-                response = RESPONSE_400
-                response[ERROR] = 'Имя пользователя уже занято.'
-                send_message(sock, response)
-                clients_list.remove(sock)
-                sock.close()
-            return
-
-        # формирует очередь сообщений
-        elif ACTION in message and message[ACTION] == MESSAGE and \
-                SENDER in message and DESTINATION in message and \
-                MESSAGE_TEXT in message and TIME in message:
-            msg = db.create_message(from_username=message[SENDER], to_username=message[DESTINATION], content=message[MESSAGE_TEXT])
-            # messages_list.append(message)
-            msg_json = {
-                SENDER : message[SENDER],
-                DESTINATION : message[DESTINATION],
-                MESSAGE_TEXT : message[MESSAGE_TEXT],
-                "CREATE_AT" : msg.created_at.strftime("%I:%M")
-            }
-            print(f"Add in route {message}")
-            messages_in_route_list.append(msg_json)
-            return
-
-        elif ACTION in message and message[ACTION] == PREVIOUS and \
-            SENDER in message and DESTINATION in message:
-            messages = db.get_messages_by_two_users(from_username=message[SENDER], to_username=message[DESTINATION])
-            messages_json = [{'CONTENT' : msg.content, SENDER : msg.from_user, DESTINATION : msg.to_user, 'CREATE_AT': msg.created_at.strftime("%I:%M")} for msg in messages]
-            response={
-                ACTION:PREVIOUS,
-                SENDER:message[SENDER],
-                DESTINATION : message[DESTINATION],
-                'MESSAGE' :messages_json
-            }
-            send_message(sock, response)
-            print(f"Server responce {response}")
-            return
-
-        elif ACTION in message and message[ACTION] == 'GET_USER_BY_NAME' and \
-                'NAME' in message:
-            users = db.find_users_by_name(message['NAME'])
-            users_json = [{'NAME' : user.name}for user in users]
-            response={
-                ACTION:'GET_USER_BY_NAME',
-                'USERS' :users_json
-            }
-            send_message(sock, response)
-            print(f"Server responce get user{response}")
-            return
-
-
-
-        # выход клиента
-        elif ACTION in message and message[ACTION] == EXIT and \
-                ACCOUNT_NAME in message:
-            clients_list.remove(names[message[USER][ACCOUNT_NAME]])
-            names[message[USER][ACCOUNT_NAME]].close()
-            del names[message[USER][ACCOUNT_NAME]]
-            return
-
-        # возвращает сообщение об ошибке
-        else:
-            response = RESPONSE_400
-            response[ERROR] = 'Некорректный запрос.'
-            send_message(sock, response)
-            return
 
 
 class Server:
@@ -114,6 +29,7 @@ class Server:
         self.all_names = dict()
         self.server_tcp = server_tcp
         self.DBManager = DBManager()
+        self.auth_service = AuthService()
     def route_client_msg(self,message, names, clients):
         """
         Адресная отправка сообщений.
@@ -131,7 +47,6 @@ class Server:
                 DESTINATION : message[DESTINATION],
                 MESSAGE_TEXT:message[MESSAGE_TEXT],
                 "CREATE_AT": message["CREATE_AT"]
-
             }
             send_message(names[message[DESTINATION]], responce)
             print(f'Отправлено сообщение пользователю {message[DESTINATION]} '
@@ -144,7 +59,7 @@ class Server:
         else:
             print(f"ConnectionError")
             server_logger.error(
-                f'Пользователь {message.to_user.name} не зарегистрирован на сервере, '
+                f'Пользователь {message[DESTINATION]} не зарегистрирован на сервере, '
                 f'отправка сообщения невозможна.')
 
     def run(self):
@@ -173,8 +88,8 @@ class Server:
             if r_clients:
                 for r_sock in r_clients:
                     try:
-                        ParserClientMessage.parse_client_msg(receive_message(r_sock), self.all_messages, self.all_messages_in_router, r_sock,
-                                         self.all_clients, self.all_names, self.DBManager)
+                        ParserClientMessage.parse_client_msg(receive_message(r_sock), self.all_messages_in_router, r_sock,
+                                         self.all_clients, self.all_names, self.DBManager, self.auth_service)
                     except Exception as ex:
                         server_logger.error(f'Клиент отключился от сервера. '
                                             f'Тип исключения: {type(ex).__name__}, аргументы: {ex.args}')
@@ -190,9 +105,11 @@ class Server:
             for msg in self.all_messages_in_router:
                 try:
                     self.route_client_msg(msg, self.all_names, w_clients)
-                except Exception:
+                except Exception as  ex:
+                    print(ex)
                     server_logger.info(f'Связь с клиентом {msg[DESTINATION]} была потеряна')
-                    self.all_clients.remove(self.all_names[msg[DESTINATION]])
+                    if self.all_names[msg[DESTINATION]] in self.all_clients:
+                        self.all_clients.remove(self.all_names[msg[DESTINATION]])
                     del self.all_names[msg[DESTINATION]]
             self.all_messages_in_router.clear()
 
