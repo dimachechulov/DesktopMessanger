@@ -2,8 +2,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
 from sqlalchemy.exc import DataError
 
-from auth.auth import AuthService
-from pages.MainPage import MyApp
+from server.auth.auth import AuthService
 
 
 class LoginWidget(QWidget):

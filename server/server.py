@@ -1,19 +1,13 @@
-import sys
-import json
 import socket
 import select
-import argparse
-import time
 import logging
-import logs.server_log_config
-from DBManager import DBManager
-from auth.auth import AuthService
 
-from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, SENDER, DESTINATION, RESPONSE, PRESENCE, ERROR, \
-    DEFAULT_PORT, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT, EXIT, RESPONSE_200, RESPONSE_400, PREVIOUS
+from auth.auth import AuthService
+from DBManager import DBManager
+from configs.default import ACTION, SENDER, DESTINATION, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT
 from configs.utils import send_message, receive_message,  server_parse_cmd_arguments
-from decorators.decorators import MyLogger
 from ParserClientMessage import ParserClientMessage
+from Manager.Manager import Manager
 
 # Инициализация серверного логера
 server_logger = logging.getLogger('server')
@@ -30,6 +24,8 @@ class Server:
         self.server_tcp = server_tcp
         self.DBManager = DBManager()
         self.auth_service = AuthService()
+        self.Manager = Manager(self.DBManager)
+
     def route_client_msg(self,message, names, clients):
         """
         Адресная отправка сообщений.
@@ -89,7 +85,7 @@ class Server:
                 for r_sock in r_clients:
                     try:
                         ParserClientMessage.parse_client_msg(receive_message(r_sock), self.all_messages_in_router, r_sock,
-                                         self.all_clients, self.all_names, self.DBManager, self.auth_service)
+                                         self.all_clients, self.all_names, self.DBManager, self.auth_service, self.Manager)
                     except Exception as ex:
                         server_logger.error(f'Клиент отключился от сервера. '
                                             f'Тип исключения: {type(ex).__name__}, аргументы: {ex.args}')

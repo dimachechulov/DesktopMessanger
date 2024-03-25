@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Secret key for encoding and decoding JWT token
 SECRET_KEY = 'your_secret_key'
 
-# Function to generate JWT token
+
 
 class AuthService:
     def __init__(self):

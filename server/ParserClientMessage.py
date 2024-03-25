@@ -1,13 +1,5 @@
-import sys
-import json
-import socket
-import select
-import argparse
-import time
-import logging
-import logs.server_log_config
-from DBManager import DBManager
 
+import logging
 from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, SENDER, DESTINATION, RESPONSE, PRESENCE, ERROR, \
     DEFAULT_PORT, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT, EXIT, RESPONSE_200, RESPONSE_400, PREVIOUS
 from configs.utils import send_message, receive_message,  server_parse_cmd_arguments
@@ -19,7 +11,7 @@ server_logger = logging.getLogger('server')
 class ParserClientMessage:
 
     @staticmethod
-    def parse_client_msg(request, messages_in_route_list, sock, clients_list, names, db, auth):
+    def parse_client_msg(request, messages_in_route_list, sock, clients_list, names, db, auth, manager):
         """
         Обработчик сообщений клиентов
         :param message: словарь сообщения
@@ -50,72 +42,29 @@ class ParserClientMessage:
             elif ACTION in request and request[ACTION] == MESSAGE and \
                     SENDER in request and DESTINATION in request and \
                     MESSAGE_TEXT in request and TIME in request:
-                msg = db.create_message(from_username=request[SENDER], to_username=request[DESTINATION], content=request[MESSAGE_TEXT])
-                # messages_list.append(message)
-                msg_json = {
-                    SENDER : request[SENDER],
-                    DESTINATION : request[DESTINATION],
-                    MESSAGE_TEXT : request[MESSAGE_TEXT],
-                    "CREATE_AT" : msg.created_at.strftime("%I:%M")
-                }
+                msg_json = manager.message_manager.create_message(request)
                 print(f"Add in route {request}")
                 messages_in_route_list.append(msg_json)
                 return
 
             elif ACTION in request and request[ACTION] == PREVIOUS and \
                 SENDER in request and DESTINATION in request:
-                messages = db.get_messages_by_two_users(from_username=request[SENDER], to_username=request[DESTINATION])
-                messages_json = [{'CONTENT' : msg.content, SENDER : msg.from_user, DESTINATION : msg.to_user, 'CREATE_AT': msg.created_at.strftime("%I:%M")} for msg in messages]
-                response={
-                    ACTION:PREVIOUS,
-                    SENDER:request[SENDER],
-                    DESTINATION : request[DESTINATION],
-                    'MESSAGE' :messages_json
-                }
-
-                query_from = db.get_query(from_username=request[SENDER], to_username=request[DESTINATION])
-                if query_from:
-                    response['STATUS'] = "SENTED_QUIRY"
-                else:
-                    query_to = db.get_query(to_username=request[SENDER], from_username=request[DESTINATION])
-                    if query_to:
-                        response['STATUS'] = "TO_HE_SENTED_QUIRY"
-                    else:
-                        friend = db.is_friend(username1=request[SENDER], username2=request[DESTINATION])
-                        if friend:
-                            response['STATUS'] = "FRIEND"
-                        else:
-                            response['STATUS'] = "NOTHING"
+                response = manager.message_manager.get_previous_messages(request)
+                response['STATUS'] = manager.user_manager.friend_status(request)
                 send_message(sock, response)
-
                 print(f"Server responce {response}")
                 return
 
             elif ACTION in request and request[ACTION] == 'GET_USER_BY_NAME' and \
                     'NAME' in request:
-                users = db.find_users_by_name(request['NAME'])
-                users_json = [{'NAME' : user.name}for user in users]
-                response={
-                    ACTION:'GET_USER_BY_NAME',
-                    'USERS' :users_json
-                }
+                response = manager.user_manager.get_user_by_name(request)
                 send_message(sock, response)
                 print(f"Server responce get user{response}")
                 return
 
             elif ACTION in request and request[ACTION] == 'CREATE_QUERY' and \
                     'TO_USERNAME' in request and 'FROM_USERNAME' in request:
-
-                db.create_query(from_username=request['FROM_USERNAME'], to_username=request['TO_USERNAME'])
-                response_from={
-                    ACTION:'CREATE_QUERY',
-                    'CREATED': True
-                }
-
-                response_to = {
-                    ACTION: 'DISPLAY_QUERY',
-                    'FROM_USERNAME' : request['FROM_USERNAME']
-                }
+                response_from, response_to = manager.quary_manager.create_query(request)
                 send_message(sock, response_from)
                 print(f"Server responce create query{response_from}")
                 if request['TO_USERNAME'] in names and names[request['TO_USERNAME']] in clients_list:
@@ -126,16 +75,7 @@ class ParserClientMessage:
             elif ACTION in request and request[ACTION] == 'ACCEPT_QUERY' and \
                     'TO_USERNAME' in request and 'FROM_USERNAME' in request:
 
-                db.create_friend(username1=request['FROM_USERNAME'], username2=request['TO_USERNAME'])
-                db.delete_query(from_username=request['FROM_USERNAME'], to_username=request['TO_USERNAME'])
-                response_from={
-                    ACTION:'ACCEPT_QUERY',
-                    'FRIEND': request['TO_USERNAME'],
-                }
-                response_to = {
-                    ACTION: 'ACCEPT_QUERY',
-                    'FRIEND' : request['FROM_USERNAME']
-                }
+                response_from, response_to = manager.quary_manager.accept_quary(request)
                 send_message(sock, response_to)
                 print(f"Server responce accept query{response_to}")
                 if request['FROM_USERNAME'] in names and names[request['FROM_USERNAME']] in clients_list:
@@ -143,23 +83,9 @@ class ParserClientMessage:
                     print(f"Server accept query{response_from}")
                 return
 
-            # request = {
-            #     'TOKEN': self.token,
-            #     ACTION: 'GET_FRIEND_STATUS',
-            #     'FROM_USERNAME': self.user.name,
-            #     'TO_USERNAME': to_username
-            # }
-
-
-
             elif ACTION in request and request[ACTION] == 'GET_FRIEND' and \
                     'USER' in request:
-                friends = db.get_friends(request['USER'])
-                friends_json = [{'NAME' : friend.name}for friend in friends]
-                response={
-                    ACTION:'GET_FRIEND',
-                    'FRIENDS' :friends_json
-                }
+                response = manager.user_manager.get_friend(request)
                 send_message(sock, response)
                 print(f"Server responce get friends{response}")
                 return
