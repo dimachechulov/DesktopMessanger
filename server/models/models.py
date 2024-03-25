@@ -16,6 +16,7 @@ class User(Base):
     password = Column(String, nullable=False)
     UniqueConstraint('name')
 
+
 class Message(Base):
     __tablename__ = 'message'
     id = Column(Integer, primary_key=True)

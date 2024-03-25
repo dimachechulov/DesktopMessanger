@@ -10,8 +10,8 @@ SECRET_KEY = 'your_secret_key'
 
 
 class AuthService:
-    def __init__(self):
-        self.db = DBManager()
+    def __init__(self, db):
+        self.db = db
 
     def register_user(self, username, password, email, age):
         users = self.db.get_all_users()

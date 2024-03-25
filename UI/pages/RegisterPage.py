@@ -2,12 +2,12 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
 from sqlalchemy.exc import DataError
 
-from server.auth.auth import AuthService
+
 
 
 class RegistrationWidget(QWidget):
     def __init__(self, stacked_widget, client, main_window):
-        self.reg_service = AuthService()
+        self.reg_service = None
         self.stacked_widget = stacked_widget
         self.client = client
         self.main_window = main_window
@@ -70,22 +70,7 @@ class RegistrationWidget(QWidget):
         email = self.email_input.text()
         age = self.age_input.text()
 
-        try:
-            self.client.token,  self.client.user = self.reg_service.register_user(username,password, email, age)
-            self.client.connect_server()
-        except ValueError as err:
-            print(err.args)
-            self.error_label.setText(err.args[0])
-            return
-        except DataError as err:
-            print(err.args)
-            self.error_label.setText("Err input in fields")
-            return
-        except Exception as ex:
-            print(ex.args)
-            return
-        self.main_window.initAfterLogin()
-        self.stacked_widget.setCurrentIndex(2)
+        self.client.register_user(username, password, email, age)
 
     def go_to_login(self):
         self.stacked_widget.setCurrentIndex(1)

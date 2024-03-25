@@ -40,12 +40,12 @@ class MainWindow(QMainWindow):
         self.client = client
         self.stacked_widget = QStackedWidget()
         self.main_window = MyApp(self.stacked_widget, self.client)
-        self.page1 = RegistrationWidget(self.stacked_widget, client, self.main_window)
-        self.page2 = LoginWidget(self.stacked_widget, client, self.main_window)
+        self.reg_window = RegistrationWidget(self.stacked_widget, client, self.main_window)
+        self.login_page = LoginWidget(self.stacked_widget, client, self.main_window)
 
 
-        self.stacked_widget.addWidget(self.page1)
-        self.stacked_widget.addWidget(self.page2)
+        self.stacked_widget.addWidget(self.reg_window)
+        self.stacked_widget.addWidget(self.login_page)
         self.stacked_widget.addWidget(self.main_window)
         self.setCentralWidget(self.stacked_widget)
 

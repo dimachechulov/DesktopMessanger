@@ -29,8 +29,8 @@ class Client:
         self.user = None
         self.receiver_name = None
         self.token = None
-        self.connected = None
-        #self.connect_server()
+        self.connected = True
+        self.connect_server()
     def connect_server(self):
         try:
 
@@ -44,40 +44,53 @@ class Client:
             print(f'Не удалось подключиться к серверу {self.server_addr}:{self.server_port}, '
                   f'запрос на подключение отклонён')
         else:
-            presence_msg = self.create_presence_msg()
+            pass
+            # presence_msg = self.create_presence_msg()
+            #
+            # # Отправляет сообщение о присутствии серверу
+            # send_message(self.sock, presence_msg)
+            #
+            # # Получает и разбирает сообщение от сервера
+            # server_answer = self.parser_first_message()
+            # # client_logger.info(f'Установлено соединение с сервером. Ответ сервера: {server_answer}')
+            # print(f'Установлено соединение с сервером. Ответ сервера: {server_answer}')
+            # self.connected = True
 
-            # Отправляет сообщение о присутствии серверу
-            send_message(self.sock, presence_msg)
+    def login_user(self, username, password):
+        request = {
+            ACTION : 'LOGIN',
+            'USERNAME' : username,
+            'PASS' : password,
+        }
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Запрошено сообщения с {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
 
-            # Получает и разбирает сообщение от сервера
-            server_answer = self.parser_first_message()
-            # client_logger.info(f'Установлено соединение с сервером. Ответ сервера: {server_answer}')
-            print(f'Установлено соединение с сервером. Ответ сервера: {server_answer}')
-            self.connected = True
-    def parser_first_message(self):
-        while True:
-            try:
-                response = receive_message(self.sock)
-                print(response)
-                # приветственное сообщение
-                if RESPONSE in response:
-                    if response[RESPONSE] == 200:
-                        pass
-                        # client_logger.debug(f'Получено приветственное сообщение от сервера: {message[RESPONSE]} OK')
+    def register_user(self, username, password, email, age):
+        request = {
+            ACTION: 'REGISTER',
+            'USERNAME': username,
+            'PASS': password,
+            'EMAIL': email,
+            'AGE' : age
+        }
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Запрошено сообщения с {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
 
-                    elif response[RESPONSE] == 400:
-                        pass
-                        # client_logger.debug(f'Получено сообщение от сервера: {message[RESPONSE]} {message[ERROR]}')
-                return
-            except (OSError, ConnectionError, ConnectionAbortedError, ConnectionResetError, json.JSONDecodeError):
-                client_logger.critical(f'Потеряно соединение с сервером.')
-                break
-        return response
     def display_previous_message(self):
         request = {
             'TOKEN': self.token,
             ACTION: PREVIOUS,
-            SENDER: self.user.name,
+            SENDER: self.user['name'],
             DESTINATION: self.receiver_name,
         }
         try:
@@ -100,7 +113,7 @@ class Client:
             'TOKEN': self.token,
             ACTION: MESSAGE,
             TIME: time.time(),
-            SENDER: self.user.name,
+            SENDER: self.user['name'],
             DESTINATION: self.receiver_name,
             MESSAGE_TEXT: message_str
         }
@@ -128,11 +141,11 @@ class Client:
             ACTION: PRESENCE,
             TIME: time.time(),
             USER: {
-                ACCOUNT_NAME: self.user.name
+                ACCOUNT_NAME: self.user['name']
             }
         }
 
-        #client_logger.debug(f'Сформировано {PRESENCE} сообщение для пользователя {self.user_name}')
+        #client_logger.debug(f'Сформировано {PRESENCE} сообщение для пользователя {self.user['name']}')
         return request
 
     # @my_logger
@@ -147,11 +160,11 @@ class Client:
             ACTION: EXIT,
             TIME: time.time(),
             USER: {
-                ACCOUNT_NAME: self.user.name
+                ACCOUNT_NAME: self.user['name']
             }
         }
 
-        #client_logger.debug(f'Сформировано {EXIT} сообщение для пользователя {self.user_name}')
+        #client_logger.debug(f'Сформировано {EXIT} сообщение для пользователя {self.user['name']}')
         return request
 
     def get_user_by_name(self, name):
@@ -177,7 +190,7 @@ class Client:
         request = {
             'TOKEN': self.token,
             ACTION: 'CREATE_QUERY',
-            'FROM_USERNAME': self.user.name,
+            'FROM_USERNAME': self.user['name'],
             'TO_USERNAME': to_username,
         }
         print(f'Сформировано сообщение: {request}')
@@ -197,7 +210,7 @@ class Client:
             'TOKEN': self.token,
             ACTION: 'ACCEPT_QUERY',
             'FROM_USERNAME':from_username ,
-            'TO_USERNAME': self.user.name
+            'TO_USERNAME': self.user['name']
         }
         print(f'Сформировано сообщение: {request}')
         # client_logger.debug(f'Сформировано сообщение: {message_dict}')
@@ -215,7 +228,7 @@ class Client:
         request = {
             'TOKEN': self.token,
             ACTION: 'GET_FRIEND_STATUS',
-            'FROM_USERNAME': self.user.name,
+            'FROM_USERNAME': self.user['name'],
             'TO_USERNAME': to_username
         }
         print(f'Сформировано сообщение: {request}')
@@ -235,7 +248,7 @@ class Client:
         request = {
             'TOKEN': self.token,
             ACTION: 'GET_FRIEND',
-            'USER': self.user.name,
+            'USER': self.user['name'],
         }
         print(f'Сформировано сообщение: {request}')
         # client_logger.debug(f'Сформировано сообщение: {message_dict}')

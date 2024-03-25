@@ -23,7 +23,7 @@ class Server:
         self.all_names = dict()
         self.server_tcp = server_tcp
         self.DBManager = DBManager()
-        self.auth_service = AuthService()
+        self.auth_service = AuthService(self.DBManager)
         self.Manager = Manager(self.DBManager)
 
     def route_client_msg(self,message, names, clients):
@@ -85,7 +85,7 @@ class Server:
                 for r_sock in r_clients:
                     try:
                         ParserClientMessage.parse_client_msg(receive_message(r_sock), self.all_messages_in_router, r_sock,
-                                         self.all_clients, self.all_names, self.DBManager, self.auth_service, self.Manager)
+                                         self.all_clients, self.all_names,  self.auth_service, self.Manager)
                     except Exception as ex:
                         server_logger.error(f'Клиент отключился от сервера. '
                                             f'Тип исключения: {type(ex).__name__}, аргументы: {ex.args}')

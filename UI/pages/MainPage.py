@@ -11,10 +11,15 @@ class MyApp(QWidget):
         super().__init__()
         self.stacked_widget = stacked_widget
         self.client = client
+        self.initUI()
 
     def initAfterLogin(self):
-        self.initUI()
+
         self.init_friends()
+        if self.client.user:
+            self.name.setText(f"You name is {self.client.user['name']}")
+        else:
+            self.name.setText(f"You name is anom")
     def initUI(self):
 
         self.setGeometry(800, 800, 800, 650)
@@ -86,10 +91,7 @@ class MyApp(QWidget):
         self.listUsers.setObjectName("listView-1")
 
         self.name = QLabel(self)
-        if self.client.user:
-            self.name.setText(f"You name is {self.client.user.name}")
-        else:
-            self.name.setText(f"You name is anom")
+
         self.name.move(555, 500)
         self.name.resize(200, 40)
         self.name.setFont(QFont('Arial', 16))

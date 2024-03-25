@@ -1,5 +1,8 @@
 
 import logging
+
+from psycopg2 import DataError
+
 from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, SENDER, DESTINATION, RESPONSE, PRESENCE, ERROR, \
     DEFAULT_PORT, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT, EXIT, RESPONSE_200, RESPONSE_400, PREVIOUS
 from configs.utils import send_message, receive_message,  server_parse_cmd_arguments
@@ -11,7 +14,7 @@ server_logger = logging.getLogger('server')
 class ParserClientMessage:
 
     @staticmethod
-    def parse_client_msg(request, messages_in_route_list, sock, clients_list, names, db, auth, manager):
+    def parse_client_msg(request, messages_in_route_list, sock, clients_list, names,  auth, manager):
         """
         Обработчик сообщений клиентов
         :param message: словарь сообщения
@@ -23,23 +26,60 @@ class ParserClientMessage:
         """
         server_logger.debug(f'Разбор сообщения от клиента: {request}')
         print(f'Разбор сообщения от клиента: {request}')
-        if "TOKEN" in request and auth.verify_token(request['TOKEN']):
-            if ACTION in request and request[ACTION] == PRESENCE and \
-                    TIME in request and USER in request:
+        if ACTION in request and request[ACTION]=="LOGIN" and 'USERNAME' in request and 'PASS' in request:
 
-                if request[USER][ACCOUNT_NAME] not in names.keys():
-                    names[request[USER][ACCOUNT_NAME]] = sock
-                    send_message(sock, RESPONSE_200)
-                else:
-                    response = RESPONSE_400
-                    response[ERROR] = 'Имя пользователя уже занято.'
-                    send_message(sock, response)
-                    clients_list.remove(sock)
-                    sock.close()
-                return
+            response = {
+                ACTION: 'LOGIN'
+            }
+            try:
+                token,  user  =  auth.login_user(request['USERNAME'], request['PASS'])
+                response["TOKEN"] = token
+                response["USER"] = {
+                    "name" : user.name,
+                    "age" : user.age,
+                    "id" : user.id
+                }
+                names[request["USERNAME"]] = sock
+            except ValueError as err:
+                response["ERROR"] = err.args
+            except DataError as err:
+                response['ERROR'] = "Err input in fields"
+            except Exception as ex:
+                print(ex.args)
+            finally:
+                send_message(sock, response)
+                print(f"Server responce {response}")
+
+
+        elif ACTION in request and request[ACTION]=="REGISTER" and 'USERNAME' in request and 'PASS' in request\
+                and 'AGE' in request and 'EMAIL' in request:
+
+            response = {
+                ACTION: 'REGISTER'
+            }
+            try:
+                token,  user  =  auth.register_user(request['USERNAME'], request['PASS'], request['EMAIL'], request['AGE'])
+                response["TOKEN"] = token
+                response["USER"] = {
+                    "name" : user.name,
+                    "age" : user.age,
+                    "id" : user.id
+                }
+                names[request["USERNAME"]] = sock
+            except ValueError as err:
+                response["ERROR"] = err.args
+            except DataError as err:
+                response['ERROR'] = "Err input in fields"
+            except Exception as ex:
+                print(ex.args)
+            finally:
+                send_message(sock, response)
+                print(f"Server responce {response}")
+
+        elif "TOKEN" in request and auth.verify_token(request['TOKEN']):
 
             # формирует очередь сообщений
-            elif ACTION in request and request[ACTION] == MESSAGE and \
+            if ACTION in request and request[ACTION] == MESSAGE and \
                     SENDER in request and DESTINATION in request and \
                     MESSAGE_TEXT in request and TIME in request:
                 msg_json = manager.message_manager.create_message(request)
