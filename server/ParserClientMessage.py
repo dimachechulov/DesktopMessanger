@@ -115,7 +115,7 @@ class ParserClientMessage:
             elif ACTION in request and request[ACTION] == 'ACCEPT_QUERY' and \
                     'TO_USERNAME' in request and 'FROM_USERNAME' in request:
 
-                response_from, response_to = manager.quary_manager.accept_quary(request)
+                response_from, response_to = manager.quary_manager.accept_query(request)
                 send_message(sock, response_to)
                 print(f"Server responce accept query{response_to}")
                 if request['FROM_USERNAME'] in names and names[request['FROM_USERNAME']] in clients_list:

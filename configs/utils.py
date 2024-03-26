@@ -36,18 +36,9 @@ def server_parse_cmd_arguments():
     :return: ip-адрес и порт сервера
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', default=DEFAULT_PORT, type=int, nargs='?')
-    parser.add_argument('-a', default='', nargs='?')
-
-    namespace = parser.parse_args(sys.argv[1:])
-    addr = namespace.a
-    port = namespace.p
-
-    # Валидация номера порта
-    if port < 1024 or port > 65535:
-        sys.exit(1)
-
-    return addr, port
+    parser.add_argument("echo")
+    args = parser.parse_args()
+    return args.echo
 def parse_cmd_arguments():
     """
     Парсер аргументов командной строки

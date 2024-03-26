@@ -1,9 +1,12 @@
 from datetime import datetime
 
 from PyQt5.QtCore import QModelIndex
-from PyQt5.QtGui import QFont, QStandardItemModel
+from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QTextBrowser, QListView
 from PyQt5 import QtCore
+
+from configs.default import SENDER, MESSAGE_TEXT, DESTINATION
+
 
 class MyApp(QWidget):
     def __init__(self, stacked_widget, client):
@@ -130,3 +133,67 @@ class MyApp(QWidget):
 
     def show_page1(self):
         self.stacked_widget.setCurrentIndex(2)
+
+    def display_message_other_user(self, responce):
+        if responce[DESTINATION] == self.client.user["name"]:
+            if responce[SENDER] == self.client:
+                self.chat.append(f'{responce["CREATE_AT"]}[{responce[SENDER]}]: {responce[MESSAGE_TEXT]}')
+                print(f'{responce["CREATE_AT"]}[{responce[SENDER]}]: {responce[MESSAGE_TEXT]}')
+            else:
+                print(f'                                  Hoвое сообщение от {responce[SENDER]}')
+
+    def display_previous_message(self, responce):
+        result = ""
+        messages = responce['MESSAGE']
+        for index in range(len(messages)):
+            if messages[index][SENDER] == self.client.user['id']:
+                result += f'{messages[index]["CREATE_AT"]}[{responce[SENDER]}] {messages[index]["CONTENT"]}'
+            else:
+                result += f'{messages[index]["CREATE_AT"]}[you] {messages[index]["CONTENT"]}'
+            if index + 1 != len(messages):
+                result += '\n'
+        try:
+            self.chat.append(result)
+            if responce['STATUS'] == 'SENTED_QUIRY':
+                self.btn_add_friend.setEnabled(False)
+                self.btn_add_friend.setVisible(True)
+                self.btn_add_friend.setText('Query to friend\nsuccessfully sent')
+            elif responce['STATUS'] == 'TO_HE_SENTED_QUIRY':
+                self.btn_add_friend.setVisible(True)
+                self.btn_add_friend.setEnabled(True)
+                self.btn_add_friend.setText('Accept')
+            elif responce['STATUS'] == 'FRIEND':
+                self.btn_add_friend.setVisible(False)
+            elif responce['STATUS'] == 'NOTHING':
+                self.btn_add_friend.setVisible(True)
+                self.btn_add_friend.setEnabled(True)
+                self.btn_add_friend.setText('Add Friend')
+        except Exception as ex:
+            print(ex)
+
+    def display_users_by_name(self, responce):
+        self.model.clear()
+        self.listUsers.setModel(self.model)
+        self.listUsers.setVisible(True)
+        self.lb_search_users.setVisible(True)
+        for user in responce['USERS']:
+            if user['NAME'] != self.client.user["name"]:
+                self.model.appendRow(QStandardItem(user['NAME']))
+
+    def display_created_query(self, responce):
+        if responce['CREATED']:
+            self.ex.main_window.btn_add_friend.setText('Query to friend\nsuccessfully sent')
+            self.ex.main_window.btn_add_friend.setEnabled(False)
+
+    def display_query(self, responce):
+        if responce['FROM_USERNAME'] == self.ex.client.receiver_name:
+            self.btn_add_friend.setText('Accept')
+
+    def display_friend(self, responce):
+        for friend in responce['FRIENDS']:
+            self.modelFriend.appendRow(QStandardItem(friend['NAME']))
+
+    def accept_query(self, responce):
+        self.btn_add_friend.setVisible(False)
+        self.modelFriend.appendRow(QStandardItem(responce['FRIEND']))
+

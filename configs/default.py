@@ -1,5 +1,7 @@
 import logging
-
+import os
+from dotenv import load_dotenv
+from pathlib import Path
 # Порт по умолчанию для сетевого ваимодействия
 DEFAULT_PORT = 7777
 # IP адрес по умолчанию для подключения клиента
@@ -38,3 +40,9 @@ RESPONSE_400 = {
     RESPONSE: 400,
     ERROR: None
 }
+
+
+path = Path('../.env')
+load_dotenv(dotenv_path=path)
+current_db_url = os.getenv('CURRENT_DB_URL')
+test_db_url = os.getenv('TEST_DB_URL')

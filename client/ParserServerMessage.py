@@ -33,94 +33,32 @@ class ParserServerMessage(QThread):
                 if self.ex.client.sock is None or not self.ex.client.connected:
                     continue
                 responce = receive_message(self.ex.client.sock)
-                print(responce)
-                # приветственное сообщение
-                if RESPONSE in responce:
-                    if responce[RESPONSE] == 200:
-                        #client_logger.debug(f'Получено приветственное сообщение от сервера: {message[RESPONSE]} OK')
-                        return
-                    elif responce[RESPONSE] == 400:
-                        #client_logger.debug(f'Получено сообщение от сервера: {message[RESPONSE]} {message[ERROR]}')
-                        return
-
+                #print(responce)
                 # сообщение от другого клиента
-                elif ACTION in responce and responce[ACTION] == MESSAGE and \
+                if ACTION in responce and responce[ACTION] == MESSAGE and \
                         SENDER in responce and DESTINATION in responce \
-                        and MESSAGE_TEXT in responce and responce[DESTINATION] == self.ex.client.user["name"]:
-                    if responce[SENDER] == self.ex.client.receiver_name:
-                        self.ex.main_window.chat.append(f'{responce["CREATE_AT"]}[{responce[SENDER]}]: {responce[MESSAGE_TEXT]}')
-                        print(f'{responce["CREATE_AT"]}[{responce[SENDER]}]: {responce[MESSAGE_TEXT]}')
-                    else:
-                        print(f'                                  Hoвое сообщение от {responce[SENDER]}')
+                        and MESSAGE_TEXT in responce:
+                    self.ex.display_message_other_user(responce)
                     #client_logger.info(f'Получено сообщение от пользователя {message[SENDER]}: {message[MESSAGE_TEXT]}')
                 # предыдущие сообщения
                 elif ACTION in responce and responce[ACTION] == PREVIOUS and \
                         SENDER in responce and responce[SENDER] == self.ex.client.user["name"]:
-                    result=""
-                    messages = responce['MESSAGE']
-                    for index in range(len(messages)):
-                        if messages[index][SENDER] == self.ex.client.user['id']:
-                            result += f'{messages[index]["CREATE_AT"]}[{responce[SENDER]}] {messages[index]["CONTENT"]}'
-                        else:
-                            result+=f'{messages[index]["CREATE_AT"]}[you] {messages[index]["CONTENT"]}'
-                        if index +1  != len(messages):
-                            result +='\n'
-                    try:
-                        self.ex.main_window.chat.append(result)
-                        if responce['STATUS'] == 'SENTED_QUIRY':
-                            self.ex.main_window.btn_add_friend.setEnabled(False)
-                            self.ex.main_window.btn_add_friend.setVisible(True)
-                            self.ex.main_window.btn_add_friend.setText('Query to friend\nsuccessfully sent')
-                        elif responce['STATUS'] == 'TO_HE_SENTED_QUIRY':
-                            self.ex.main_window.btn_add_friend.setVisible(True)
-                            self.ex.main_window.btn_add_friend.setEnabled(True)
-                            self.ex.main_window.btn_add_friend.setText('Accept')
-                        elif responce['STATUS'] == 'FRIEND':
-                            self.ex.main_window.btn_add_friend.setVisible(False)
-                        elif responce['STATUS'] == 'NOTHING':
-                            self.ex.main_window.btn_add_friend.setVisible(True)
-                            self.ex.main_window.btn_add_friend.setEnabled(True)
-                            self.ex.main_window.btn_add_friend.setText('Add Friend')
-                    except Exception as ex:
-                        print(ex)
-
+                    self.ex.display_previous_message(responce)
                 elif ACTION in responce and responce[ACTION] == 'GET_USER_BY_NAME' and \
                         'USERS' in responce:
-                    self.ex.main_window.model.clear()
-                    self.ex.main_window.listUsers.setModel(self.ex.main_window.model)
-                    self.ex.main_window.listUsers.setVisible(True)
-                    self.ex.main_window.lb_search_users.setVisible(True)
-                    for user in responce['USERS']:
-                        if user['NAME'] != self.ex.client.user["name"]:
-                            self.ex.main_window.model.appendRow(QStandardItem(user['NAME']))
-
+                    self.ex.display_users_by_name(responce)
                 elif ACTION in responce and responce[ACTION] == 'CREATE_QUERY':
-                    if responce['CREATED']:
-                        self.ex.main_window.btn_add_friend.setText('Query to friend\nsuccessfully sent')
-                        self.ex.main_window.btn_add_friend.setEnabled(False)
-
+                    self.ex.display_created_query(responce)
                 elif ACTION in responce and responce[ACTION] == 'DISPLAY_QUERY':
-                    if responce['FROM_USERNAME'] == self.ex.client.receiver_name:
-                        self.ex.main_window.btn_add_friend.setText('Accept')
-
+                    self.ex.diplay_query(responce)
                 elif ACTION in responce and responce[ACTION] == 'ACCEPT_QUERY':
-                    self.ex.main_window.btn_add_friend.setVisible(False)
-                    self.ex.main_window.modelFriend.appendRow(QStandardItem(responce['FRIEND']))
-
-
+                    self.ex.accept_query(responce)
                 elif ACTION in responce and responce[ACTION] == 'GET_FRIEND' and \
                         'FRIENDS' in responce:
-                    for friend in responce['FRIENDS']:
-                        self.ex.main_window.modelFriend.appendRow(QStandardItem(friend['NAME']))
-
+                    self.ex.display_friend(responce)
                 elif ACTION in responce and (responce[ACTION] == 'LOGIN' or responce[ACTION] == 'REGISTER'):
-                    if 'ERROR' in responce:
-                        self.ex.login_page.error_label.setText(responce["ERROR"])
-                    else:
-                        self.ex.client.token = responce["TOKEN"]
-                        self.ex.client.user = responce["USER"]
-                        self.ex.main_window.initAfterLogin()
-                        self.ex.stacked_widget.setCurrentIndex(2)
+                    self.ex.display_login_register(responce)
+
                 else:
                     print(f'Получено некорректное сообщение с сервера: {responce}')
             except (OSError, ConnectionError, ConnectionAbortedError, ConnectionResetError, json.JSONDecodeError) as ex:

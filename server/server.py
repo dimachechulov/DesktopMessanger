@@ -4,10 +4,12 @@ import logging
 
 from auth.auth import AuthService
 from DBManager import DBManager
-from configs.default import ACTION, SENDER, DESTINATION, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT
+from configs.default import ACTION, SENDER, DESTINATION, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT, DEFAULT_PORT, \
+    test_db_url, current_db_url
 from configs.utils import send_message, receive_message,  server_parse_cmd_arguments
 from ParserClientMessage import ParserClientMessage
 from Manager.Manager import Manager
+from FakeDBManager import FakeDBManager
 
 # Инициализация серверного логера
 server_logger = logging.getLogger('server')
@@ -16,16 +18,38 @@ server_logger = logging.getLogger('server')
 
 
 class Server:
-    def __init__(self, server_tcp):
+    def __init__(self, listen_addr, listen_port, db):
         self.all_clients = []
         self.all_messages_in_router = []
         self.all_messages = []
         self.all_names = dict()
-        self.server_tcp = server_tcp
-        self.DBManager = DBManager()
+        self.DBManager = db
         self.auth_service = AuthService(self.DBManager)
         self.Manager = Manager(self.DBManager)
+        self.run_server(listen_addr, listen_port)
 
+
+    def run_server(self,listen_addr, listen_port):
+
+
+        # Создает TCP-сокет сервера
+        self.server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Связывает сокет с ip-адресом и портом сервера
+        self.server_tcp.bind((listen_addr, listen_port))
+
+        # Таймаут для операций с сокетом
+        self.server_tcp.settimeout(0.5)
+
+        # Запускает режим прослушивания
+        self.server_tcp.listen(MAX_CONNECTIONS)
+
+        server_logger.info(f'Запущен сервер, порт для подключений: {listen_port}, '
+                           f'адрес с которого принимаются подключения: {listen_addr}. '
+                           f'Если адрес не указан, принимаются соединения с любых адресов.')
+
+        print(f'Запущен сервер, порт для подключений: {listen_port}, '
+              f'адрес с которого принимаются подключения: {listen_addr}.')
     def route_client_msg(self,message, names, clients):
         """
         Адресная отправка сообщений.
@@ -92,8 +116,9 @@ class Server:
 
                         self.all_clients.remove(r_sock)
                         inverted_all_names = {v: k for k, v in self.all_names.items()}
-                        key_to_remove = inverted_all_names.pop(r_sock)
-                        del self.all_names[key_to_remove]
+                        if r_sock in inverted_all_names:
+                            key_to_remove = inverted_all_names.pop(r_sock)
+                            del self.all_names[key_to_remove]
 
             # print(f"All messages: {all_messages}")
             # print(f"All messages in router: {all_messages_in_router}")
@@ -116,30 +141,13 @@ class Server:
 
 
 if __name__ == '__main__':
-
-    # Извлекает ip-адрес и порт из командной строки
-    listen_addr, listen_port= server_parse_cmd_arguments()
-
-    # Создает TCP-сокет сервера
-    server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Связывает сокет с ip-адресом и портом сервера
-    server_tcp.bind((listen_addr, listen_port))
-
-    # Таймаут для операций с сокетом
-    server_tcp.settimeout(0.5)
-
-    # Запускает режим прослушивания
-    server_tcp.listen(MAX_CONNECTIONS)
-
-    server_logger.info(f'Запущен сервер, порт для подключений: {listen_port}, '
-                       f'адрес с которого принимаются подключения: {listen_addr}. '
-                       f'Если адрес не указан, принимаются соединения с любых адресов.')
-
-    print(f'Запущен сервер, порт для подключений: {listen_port}, '
-          f'адрес с которого принимаются подключения: {listen_addr}.')
-
-    server = Server(server_tcp)
+    is_test = server_parse_cmd_arguments()
+    if is_test == 'test':
+        db = FakeDBManager()
+    else:
+        db = DBManager(current_db_url)
+    listen_addr, listen_port = '', DEFAULT_PORT
+    server = Server(listen_addr, listen_port, db)
     server.run()
 
 

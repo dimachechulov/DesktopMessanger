@@ -70,10 +70,10 @@ class Client:
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
-    def register_user(self, username, password, email, age):
+    def register_user(self, name, password, email, age):
         request = {
             ACTION: 'REGISTER',
-            'USERNAME': username,
+            'USERNAME': name,
             'PASS': password,
             'EMAIL': email,
             'AGE' : age
@@ -85,6 +85,21 @@ class Client:
             print(ex)
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
+
+    def logout_user(self):
+        request = {
+            ACTION: 'LOGOUT',
+            'NAME': self.user.name
+        }
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Запрошено сообщения с {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+
 
     def display_previous_message(self):
         request = {
@@ -117,12 +132,12 @@ class Client:
             DESTINATION: self.receiver_name,
             MESSAGE_TEXT: message_str
         }
-        print(f'Сформировано сообщение: {request}')
+        #print(f'Сформировано сообщение: {request}')
         #client_logger.debug(f'Сформировано сообщение: {message_dict}')
 
         try:
             send_message(self.sock, request)
-            print(f'Отправлено сообщение для пользователя {self.receiver_name}')
+            #print(f'Отправлено сообщение для пользователя {self.receiver_name}')
             #client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
         except Exception as ex:
             print(ex)
@@ -130,42 +145,27 @@ class Client:
             #client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
-    def create_presence_msg(self):
-        """
-        Формирование сообщения о присутствии
-        :param account_name: строка псевдонима
-        :return: словарь ответа о присутствии клиента
-        """
-        request = {
-            'TOKEN': self.token,
-            ACTION: PRESENCE,
-            TIME: time.time(),
-            USER: {
-                ACCOUNT_NAME: self.user['name']
-            }
-        }
 
-        #client_logger.debug(f'Сформировано {PRESENCE} сообщение для пользователя {self.user['name']}')
-        return request
 
     # @my_logger
-    def create_exit_message(self):
+    def send_exit_message(self):
         """
         Формирование сообщения о выходе
         :param account_name: строка псевдонима
         :return: словарь ответа о выходе клиента
         """
-        request = {
-            'TOKEN': self.token,
-            ACTION: EXIT,
-            TIME: time.time(),
-            USER: {
-                ACCOUNT_NAME: self.user['name']
+        if self.user:
+            request = {
+                'TOKEN': self.token,
+                ACTION: EXIT,
+                TIME: time.time(),
+                USER: {
+                    ACCOUNT_NAME: self.user['name']
+                }
             }
-        }
 
-        #client_logger.debug(f'Сформировано {EXIT} сообщение для пользователя {self.user['name']}')
-        return request
+            #client_logger.debug(f'Сформировано {EXIT} сообщение для пользователя {self.user['name']}')
+            send_message(self.sock, request)
 
     def get_user_by_name(self, name):
         request = {
@@ -224,24 +224,24 @@ class Client:
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
-    def get_friend_status(self, to_username):
-        request = {
-            'TOKEN': self.token,
-            ACTION: 'GET_FRIEND_STATUS',
-            'FROM_USERNAME': self.user['name'],
-            'TO_USERNAME': to_username
-        }
-        print(f'Сформировано сообщение: {request}')
-        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
-
-        try:
-            send_message(self.sock, request)
-            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
-        except Exception as ex:
-            print(ex)
-            print('Потеряно соединение с сервером.')
-            # client_logger.critical('Потеряно соединение с сервером.')
-            sys.exit(1)
+    # def get_friend_status(self, to_username):
+    #     request = {
+    #         'TOKEN': self.token,
+    #         ACTION: 'GET_FRIEND_STATUS',
+    #         'FROM_USERNAME': self.user['name'],
+    #         'TO_USERNAME': to_username
+    #     }
+    #     print(f'Сформировано сообщение: {request}')
+    #     # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+    #
+    #     try:
+    #         send_message(self.sock, request)
+    #         # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+    #     except Exception as ex:
+    #         print(ex)
+    #         print('Потеряно соединение с сервером.')
+    #         # client_logger.critical('Потеряно соединение с сервером.')
+    #         sys.exit(1)
 
 
     def init_friends(self):
@@ -266,6 +266,7 @@ class Client:
 
     def __del__(self):
         if self.sock:
-            exit_msg = self.create_exit_message()
-            send_message(self.sock, exit_msg)
+            self.send_exit_message()
+        self.sock.close()
+
 

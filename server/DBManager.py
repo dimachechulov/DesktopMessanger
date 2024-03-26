@@ -24,8 +24,8 @@ from models.models import User, Base, Message, Query, Friend
 # except Exception as ex:
 #     print(f"INFO {ex}")
 class DBManager:
-    def __init__(self):
-        engine = create_engine('postgresql://postgres:postgres@localhost:5432/OOP_postgres')
+    def __init__(self, db_url):
+        engine = create_engine(db_url)
         Session = sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
         self.session = Session()
