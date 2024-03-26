@@ -35,13 +35,20 @@ class MyApp(QWidget):
         self.chat.setFont(QFont('Arial', 25))
         self.chat.setAlignment(QtCore.Qt.AlignRight)
         self.chat.setStyleSheet("background-color: grey")
-
+        self.chat.setObjectName('chat')
         self.btn_add_friend = QPushButton(self)
         self.btn_add_friend.move(410, 5)
         self.btn_add_friend.resize(140,50)
         self.btn_add_friend.setText("Add Friend")
         self.btn_add_friend.clicked.connect(self.create_query)
         self.btn_add_friend.setVisible(False)
+
+        self.btn_add_in_group = QPushButton(self)
+        self.btn_add_in_group.move(410, 5)
+        self.btn_add_in_group.resize(140, 50)
+        self.btn_add_in_group.setText("Add in Group")
+        self.btn_add_in_group.clicked.connect(self.add_in_group)
+        self.btn_add_in_group.setVisible(False)
 
         self.btn_send_message = QPushButton(self)
         self.btn_send_message.setText("Отправить сообщение")
@@ -65,6 +72,17 @@ class MyApp(QWidget):
         self.listFriend.clicked[QModelIndex].connect(self.change_chat)
         self.listFriend.setModel(self.modelFriend)
         self.listFriend.setObjectName("listView-2")
+        self.btnOpenUserGroup = QPushButton(self)
+        self.btnOpenUserGroup.move(555, 675)
+        self.btnOpenUserGroup.resize(200, 50)
+        self.btnOpenUserGroup.setText("Open Group")
+        self.btnOpenUserGroup.clicked.connect(self.open_user_group)
+        self.btnCreateGroup = QPushButton(self)
+        self.btnCreateGroup.move(555, 725)
+        self.btnCreateGroup.resize(200, 50)
+        self.btnCreateGroup.setText("Create Group")
+        self.btnCreateGroup.clicked.connect(self.create_group)
+
 
 
 
@@ -112,15 +130,34 @@ class MyApp(QWidget):
         else:
             self.client.accept_query(to_username)
 
+    def create_group(self):
+        self.stacked_widget.setCurrentIndex(3)
+
+    def open_user_group(self):
+        self.chat.clear()
+        self.client.groups_by_user()
+        self.stacked_widget.setCurrentIndex(4)
+
+    def add_in_group(self):
+        self.stacked_widget.setCurrentIndex(5)
+
+
     def create_client_msg(self):
-        message_str = self.tb_send_message.text()
-        now = datetime.now().strftime("%I:%M")
-        self.chat.append(f'{now}[you]: {message_str}')
-        self.client.create_client_msg(message_str)
+        if self.client.receiver_name:
+            message_str = self.tb_send_message.text()
+            now = datetime.now().strftime("%I:%M")
+            self.chat.append(f'{now}[you]: {message_str}')
+            self.client.create_client_msg(message_str)
+        elif self.client.selected_group:
+            message_str = self.tb_send_message.text()
+            now = datetime.now().strftime("%I:%M")
+            self.chat.append(f'{now}[you]: {message_str}')
+            self.client.create_client_msg_in_group(message_str)
+
 
     def get_users_by_name(self):
         name = self.tb_change_chat.text()
-        self.client.get_user_by_name(name)
+        self.client.get_user_by_name(name, method="ToOpenChat")
     def change_chat(self, index):
 
         if self.model.itemFromIndex(index):
@@ -131,12 +168,11 @@ class MyApp(QWidget):
             self.chat.setText(f"               chat with {self.modelFriend.itemFromIndex(index).text()}\n ")
         self.client.display_previous_message()
 
-    def show_page1(self):
-        self.stacked_widget.setCurrentIndex(2)
+
 
     def display_message_other_user(self, responce):
         if responce[DESTINATION] == self.client.user["name"]:
-            if responce[SENDER] == self.client:
+            if responce[SENDER] == self.client.receiver_name:
                 self.chat.append(f'{responce["CREATE_AT"]}[{responce[SENDER]}]: {responce[MESSAGE_TEXT]}')
                 print(f'{responce["CREATE_AT"]}[{responce[SENDER]}]: {responce[MESSAGE_TEXT]}')
             else:
@@ -196,4 +232,55 @@ class MyApp(QWidget):
     def accept_query(self, responce):
         self.btn_add_friend.setVisible(False)
         self.modelFriend.appendRow(QStandardItem(responce['FRIEND']))
+
+    def display_open_group(self, responce):
+        messages = responce['MESSAGES']
+        result = f"               group {responce['GROUP']}\n "
+        for index in range(len(messages)):
+            if messages[index][SENDER] != self.client.user['name']:
+                result += f'{messages[index]["CREATE_AT"]}[{messages[index][SENDER]}] {messages[index]["CONTENT"]}'
+            else:
+                result += f'{messages[index]["CREATE_AT"]}[you] {messages[index]["CONTENT"]}'
+            if index + 1 != len(messages):
+                result += '\n'
+        self.stacked_widget.setCurrentIndex(2)
+        self.chat.append(result)
+        self.client.selected_group = responce['GROUP']
+        self.client.receiver_name = None
+        if responce['IS_ADMIN']:
+            self.btn_add_in_group.setVisible(True)
+        else:
+            self.btn_add_in_group.setVisible(False)
+
+    def display_add_user_in_group(self, responce):
+        self.stacked_widget.setCurrentIndex(2)
+        if responce['ADDED']:
+            pass
+        #ADD sucs message
+
+    # responce = {
+    #     ACTION: "MESSAGE_IN_GROUP",
+    #     SENDER: msg.from_user,
+    #     "GROUP": request['GROUP'],
+    #     MESSAGE_TEXT: msg.content,
+    #     "CREATE_AT": msg.created_at.strftime("%I:%M")
+    # }
+    def display_message_other_user_in_group(self, responce):
+        if responce["GROUP"] == self.client.selected_group:
+            self.chat.append(f'{responce["CREATE_AT"]}[{responce[SENDER]}]: {responce[MESSAGE_TEXT]}')
+            print(f'{responce["CREATE_AT"]}[{responce[SENDER]}]: {responce[MESSAGE_TEXT]}')
+        else:
+            print(f'                                  Hoвое сообщение от {responce[SENDER]}')
+
+
+
+
+
+
+
+# responce = {
+#     ACTION: 'OPEN_GROUP',
+#     'MESSAGES': messages_json,
+#     'IS_ADMIN': self.db.is_admin_in_group(request['USER'], request['NAME'])
+# }
 

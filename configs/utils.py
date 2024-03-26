@@ -15,7 +15,10 @@ def receive_message(sock):
     """
 
     # Получает байты
+
     encoded_response = sock.recv(MAX_PACKAGE_LENGTH)
+
+
     if isinstance(encoded_response, bytes):
         # Декодирует байтстроку в строку
         json_response = encoded_response.decode(ENCODING)
@@ -28,6 +31,7 @@ def receive_message(sock):
             raise ValueError
     else:
         raise ValueError
+
 
 
 def server_parse_cmd_arguments():

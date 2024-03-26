@@ -26,10 +26,11 @@ class Client:
         self.server_addr = server_addr
         self.server_port =server_port
         self.sock = None
-        self.user = None
+        self.user = {'name' : 'Anom'}
         self.receiver_name = None
         self.token = None
         self.connected = True
+        self.selected_group = None
         self.connect_server()
     def connect_server(self):
         try:
@@ -89,7 +90,7 @@ class Client:
     def logout_user(self):
         request = {
             ACTION: 'LOGOUT',
-            'NAME': self.user.name
+            'NAME': self.user['name']
         }
         try:
             send_message(self.sock, request)
@@ -145,6 +146,28 @@ class Client:
             #client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
+    def create_client_msg_in_group(self, message_str):
+        request = {
+            'TOKEN': self.token,
+            ACTION: "MESSAGE_IN_GROUP",
+            TIME: time.time(),
+            SENDER: self.user['name'],
+            "GROUP" : self.selected_group,
+            MESSAGE_TEXT: message_str
+        }
+        # print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # print(f'Отправлено сообщение для пользователя {self.receiver_name}')
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
 
 
     # @my_logger
@@ -167,12 +190,13 @@ class Client:
             #client_logger.debug(f'Сформировано {EXIT} сообщение для пользователя {self.user['name']}')
             send_message(self.sock, request)
 
-    def get_user_by_name(self, name):
+    def get_user_by_name(self, name, method):
         request = {
             'TOKEN': self.token,
             ACTION: 'GET_USER_BY_NAME',
             TIME: time.time(),
             'NAME': name,
+            'METHOD' : method
         }
         print(f'Сформировано сообщение: {request}')
         # client_logger.debug(f'Сформировано сообщение: {message_dict}')
@@ -185,6 +209,8 @@ class Client:
             print('Потеряно соединение с сервером.')
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
+
+
 
     def create_query(self, to_username):
         request = {
@@ -204,6 +230,8 @@ class Client:
             print('Потеряно соединение с сервером.')
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
+
+
 
     def accept_query(self, from_username):
         request = {
@@ -262,6 +290,81 @@ class Client:
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
+    def create_group(self, name):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'CREATE_GROUP',
+            'ADMIN': self.user['name'],
+            'NAME' : name
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+    def open_group(self, name):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'OPEN_GROUP',
+            'USER': self.user['name'],
+            'NAME': name
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+
+    def groups_by_user(self):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'GROUPS_BY_USER',
+            'USER': self.user['name'],
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+    def add_in_group(self, username):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'ADD_IN_GROUP',
+            'USER': username,
+            'GROUP' : self.selected_group
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
 
 
     def __del__(self):

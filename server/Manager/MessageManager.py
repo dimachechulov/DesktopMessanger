@@ -29,3 +29,16 @@ class MessageManager:
             "CREATE_AT": msg.created_at.strftime("%I:%M")
         }
         return msg_json
+
+    def create_message_in_group(self, request):
+        msg = self.db.create_message_in_group(from_username=request[SENDER], group=request['GROUP'],
+                                content=request[MESSAGE_TEXT])
+        responce = {
+            ACTION: "MESSAGE_IN_GROUP",
+            SENDER: request[SENDER],
+            "GROUP" : request['GROUP'],
+            MESSAGE_TEXT: msg.content,
+            "CREATE_AT": msg.created_at.strftime("%I:%M")
+        }
+        users = self.db.get_users_in_group(groupname=request['GROUP'])
+        return responce, users

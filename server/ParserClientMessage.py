@@ -87,6 +87,17 @@ class ParserClientMessage:
                 messages_in_route_list.append(msg_json)
                 return
 
+
+
+            if ACTION in request and request[ACTION] == 'MESSAGE_IN_GROUP' and \
+                    SENDER in request and 'GROUP' in request and \
+                    MESSAGE_TEXT in request and TIME in request:
+                responce, users = manager.message_manager.create_message_in_group(request)
+                for user in users:
+                    if user.name in names and names[user.name] in clients_list and user.name != responce[SENDER]:
+                        send_message(names[user.name], responce)
+                return
+
             elif ACTION in request and request[ACTION] == PREVIOUS and \
                 SENDER in request and DESTINATION in request:
                 response = manager.message_manager.get_previous_messages(request)
@@ -128,6 +139,37 @@ class ParserClientMessage:
                 response = manager.user_manager.get_friend(request)
                 send_message(sock, response)
                 print(f"Server responce get friends{response}")
+                return
+
+            elif ACTION in request and request[ACTION] == 'CREATE_GROUP' and \
+                    'ADMIN' in request and 'NAME' in request:
+                response = manager.group_manager.create_group(request)
+                send_message(sock, response)
+                print(f"Server responce create group{response}")
+                return
+
+
+            elif ACTION in request and request[ACTION] == 'GROUPS_BY_USER' and \
+                    'USER' in request:
+                response = manager.group_manager.groups_by_user(request)
+                send_message(sock, response)
+                print(f"Server responce group by user{response}")
+                return
+
+            elif ACTION in request and request[ACTION] == 'OPEN_GROUP' and \
+                    'USER' in request and 'NAME' in request:
+                response = manager.group_manager.open_group(request)
+                send_message(sock, response)
+                print(f"Server responce open group{response}")
+                return
+
+
+
+            elif ACTION in request and request[ACTION] == 'ADD_IN_GROUP' and \
+                    'USER' in request and 'GROUP' in request:
+                response = manager.group_manager.add_in_group(request)
+                send_message(sock, response)
+                print(f"Server responce add in group{response}")
                 return
 
             # выход клиента

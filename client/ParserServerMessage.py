@@ -33,7 +33,7 @@ class ParserServerMessage(QThread):
                 if self.ex.client.sock is None or not self.ex.client.connected:
                     continue
                 responce = receive_message(self.ex.client.sock)
-                #print(responce)
+                print(responce)
                 # сообщение от другого клиента
                 if ACTION in responce and responce[ACTION] == MESSAGE and \
                         SENDER in responce and DESTINATION in responce \
@@ -47,6 +47,7 @@ class ParserServerMessage(QThread):
                 elif ACTION in responce and responce[ACTION] == 'GET_USER_BY_NAME' and \
                         'USERS' in responce:
                     self.ex.display_users_by_name(responce)
+
                 elif ACTION in responce and responce[ACTION] == 'CREATE_QUERY':
                     self.ex.display_created_query(responce)
                 elif ACTION in responce and responce[ACTION] == 'DISPLAY_QUERY':
@@ -58,6 +59,21 @@ class ParserServerMessage(QThread):
                     self.ex.display_friend(responce)
                 elif ACTION in responce and (responce[ACTION] == 'LOGIN' or responce[ACTION] == 'REGISTER'):
                     self.ex.display_login_register(responce)
+                elif ACTION in responce and responce[ACTION] == 'CREATE_GROUP':
+                    self.ex.display_created_group(responce)
+                elif ACTION in responce and responce[ACTION] == 'OPEN_GROUP':
+                    self.ex.display_open_group(responce)
+                elif ACTION in responce and responce[ACTION] == 'GROUPS_BY_USER':
+                    self.ex.display_group_by_user(responce)
+                elif ACTION in responce and responce[ACTION] == 'ADD_IN_GROUP':
+                    self.ex.display_add_user_in_group(responce)
+                elif ACTION in responce and responce[ACTION] == 'MESSAGE_IN_GROUP':
+                    self.ex.display_message_other_user_in_group(responce)
+
+
+
+
+
 
                 else:
                     print(f'Получено некорректное сообщение с сервера: {responce}')

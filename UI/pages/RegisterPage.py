@@ -6,11 +6,10 @@ from sqlalchemy.exc import DataError
 
 
 class RegistrationWidget(QWidget):
-    def __init__(self, stacked_widget, client, main_window):
+    def __init__(self, stacked_widget, client):
         self.reg_service = None
         self.stacked_widget = stacked_widget
         self.client = client
-        self.main_window = main_window
         super().__init__()
         self.InitUi()
 

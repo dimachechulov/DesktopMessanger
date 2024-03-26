@@ -20,7 +20,8 @@ class UserManager:
         users_json = [{'NAME': user.name} for user in users]
         response = {
             ACTION: 'GET_USER_BY_NAME',
-            'USERS': users_json
+            'USERS': users_json,
+            'METHOD': request['METHOD']
         }
         return response
 

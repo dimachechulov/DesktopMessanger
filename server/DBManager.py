@@ -4,7 +4,7 @@ import psycopg2
 from sqlalchemy import create_engine, or_, and_
 from sqlalchemy.orm import sessionmaker
 
-from models.models import User, Base, Message, Query, Friend
+from models.models import User, Base, Message, Query, Friend, Group, GroupUser
 
 
 # conn = None
@@ -108,6 +108,57 @@ class DBManager:
             Friend.user2 == user.id).all()
         friends = list(friends_user1) + list(friends_user2)
         return friends
+
+    def create_group(self, name):
+        group = Group(name=name)
+        self.session.add(group)
+        self.session.commit()
+
+    def add_user_in_group(self, groupname, username, is_admin):
+        user = self.session.query(User).filter_by(name=username).first()
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        group_user = GroupUser(group=group.id, user=user.id, is_admin=is_admin)
+        self.session.add(group_user)
+        self.session.commit()
+
+    def get_messages_in_group(self, name):
+        group = self.session.query(Group).filter_by(name=name).first()
+
+        messages = self.session.query(Message).filter(Message.group == group.id).all()
+        return messages
+
+    def is_admin_in_group(self, username,groupname):
+        user = self.session.query(User).filter_by(name=username).first()
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        return self.session.query(GroupUser).filter_by(user=user.id, group=group.id).first().is_admin
+
+    def get_groups_by_user(self, username):
+        user = self.session.query(User).filter_by(name=username).first()
+        groups = self.session.query(Group).join(GroupUser, GroupUser.group == Group.id).filter(
+            GroupUser.user == user.id).all()
+        return groups
+
+    def create_message_in_group(self,from_username, group,content):
+        user = self.session.query(User).filter_by(name=from_username).first()
+        group = self.session.query(Group).filter_by(name=group).first()
+        message = Message(from_user=user.id, group=group.id, content=content)
+        self.session.add(message)
+        self.session.commit()
+        return message
+
+    def get_users_in_group(self,groupname):
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        users = self.session.query(User).join(GroupUser, GroupUser.user == User.id).filter(
+            GroupUser.group == group.id).all()
+        return users
+
+
+
+
+
+
+
+
 
 
 
