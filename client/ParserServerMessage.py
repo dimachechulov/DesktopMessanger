@@ -51,10 +51,10 @@ class ParserServerMessage(QThread):
                 elif ACTION in responce and responce[ACTION] == 'CREATE_QUERY':
                     self.ex.display_created_query(responce)
                 elif ACTION in responce and responce[ACTION] == 'DISPLAY_QUERY':
-                    self.ex.diplay_query(responce)
+                    self.ex.display_query(responce)
                 elif ACTION in responce and responce[ACTION] == 'ACCEPT_QUERY':
                     self.ex.accept_query(responce)
-                elif ACTION in responce and responce[ACTION] == 'GET_FRIEND' and \
+                elif ACTION in responce and responce[ACTION] == 'GET_FRIEND_GROUP' and \
                         'FRIENDS' in responce:
                     self.ex.display_friend(responce)
                 elif ACTION in responce and (responce[ACTION] == 'LOGIN' or responce[ACTION] == 'REGISTER'):
@@ -69,6 +69,20 @@ class ParserServerMessage(QThread):
                     self.ex.display_add_user_in_group(responce)
                 elif ACTION in responce and responce[ACTION] == 'MESSAGE_IN_GROUP':
                     self.ex.display_message_other_user_in_group(responce)
+
+
+                elif ACTION in responce and responce[ACTION] == 'GET_USERS_IN_GROUP':
+                    self.ex.display_users_in_group(responce)
+                elif ACTION in responce and responce[ACTION] == 'ADD_IN_ADMIN':
+                    self.ex.display_users_add_in_admin(responce)
+                elif ACTION in responce and responce[ACTION] == 'ADDED_IN_ADMIN':
+                    self.ex.display_users_added_in_admin(responce)
+                elif ACTION in responce and responce[ACTION] == 'DELETE_FROM_GROUP':
+                    self.ex.display_delete_from_group(responce)
+                elif ACTION in responce and responce[ACTION] == 'DELETED_FROM_GROUP':
+                    self.ex.display_deleted_from_group(responce)
+
+
 
 
 

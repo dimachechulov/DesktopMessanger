@@ -14,8 +14,10 @@ from PyQt5 import QtGui
 from sqlalchemy.exc import DataError
 
 import logs.client_log_config
+from UI.pages.AddAdminPage import AddAdminWidget
 from UI.pages.AddInGroupPage import AddInGroupWidget
-from UI.pages.GroupPage import GroupWidget
+from UI.pages.ChatPage import ChatWidget
+
 
 from client.ParserServerMessage import ParserServerMessage
 
@@ -45,21 +47,23 @@ class MainWindow(QMainWindow):
         self.reg_window = RegistrationWidget(self.stacked_widget, client)
         self.login_page = LoginWidget(self.stacked_widget, client)
         self.create_group_page = CreateGroupWidget(self.stacked_widget, self.client)
-        self.groups = GroupWidget(self.stacked_widget, self.client)
         self.add_in_group = AddInGroupWidget(self.stacked_widget, self.client)
+        self.add_in_admin = AddAdminWidget(self.stacked_widget, self.client)
+        self.chat = ChatWidget(self.stacked_widget, self.client)
         self.stacked_widget.addWidget(self.reg_window)
         self.stacked_widget.addWidget(self.login_page)
         self.stacked_widget.addWidget(self.main_window)
         self.stacked_widget.addWidget(self.create_group_page)
-        self.stacked_widget.addWidget(self.groups)
         self.stacked_widget.addWidget(self.add_in_group)
+        self.stacked_widget.addWidget(self.add_in_admin)
+        self.stacked_widget.addWidget(self.chat)
         self.setCentralWidget(self.stacked_widget)
 
     def display_message_other_user(self, responce):
-        self.main_window.display_message_other_user(responce)
+        self.chat.display_message_other_user(responce)
 
     def display_previous_message(self, responce):
-        self.main_window.display_previous_message(responce)
+        self.chat.display_previous_message(responce)
 
     def display_users_by_name(self, responce):
         if responce['METHOD'] == 'ToOpenChat':
@@ -69,13 +73,14 @@ class MainWindow(QMainWindow):
 
 
     def display_created_query(self, responce):
-        self.main_window.display_created_qery(responce)
+        self.chat.display_created_query(responce)
 
     def display_query(self, responce):
-        self.main_window.display_query(responce)
+        self.chat.display_query(responce)
 
     def accept_query(self, responce):
-        self.main_window.accept_query(responce)
+        self.main_window.modelFriend.appendRow(QStandardItem(responce['FRIEND']))
+        self.chat.accept_query(responce)
 
     def display_friend(self, responce):
         self.main_window.display_friend(responce)
@@ -93,21 +98,42 @@ class MainWindow(QMainWindow):
         self.create_group_page.display_created_group(responce)
 
     def display_open_group(self, responce):
-        self.main_window.display_open_group(responce)
+        self.chat.display_open_group(responce)
 
     def display_group_by_user(self, responce):
-        self.groups.display_group_by_user(responce)
+        self.main_window.display_group_by_user(responce)
 
     def display_add_user_in_group(self, responce):
-        self.main_window.display_add_user_in_group(responce)
+        self.stacked_widget.setCurrentIndex(6)
+        if responce['ADDED']:
+            pass
 
     def display_message_other_user_in_group(self, responce):
-        self.main_window.display_message_other_user_in_group(responce)
+        self.chat.display_message_other_user_in_group(responce)
+
+    def display_users_in_group(self, responce):
+        self.add_in_admin.display_users_in_group(responce)
+
+    def display_users_add_in_admin(self, responce):
+        self.stacked_widget.setCurrentIndex(6)
+        #add sucs message
+
+    def display_users_added_in_admin(self, responce):
+        self.chat.display_users_added_in_admin(responce)
+
+    def display_delete_from_group(self, responce):
+        self.stacked_widget.setCurrentIndex(2)
+
+    def display_deleted_from_group(self, responce):
+        self.chat.display_deleted_from_group(responce)
 
 
-
-
-
+# responce = {
+#     ACTION: 'ADD_IN_ADMIN',
+#     'USER': request['USER'],
+#     'GROUP': request['GROUP'],
+#     'ADDED': True
+# }
 
 
 

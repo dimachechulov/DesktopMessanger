@@ -63,6 +63,12 @@ class GroupManager:
     #     'GROUP': self.selected_group['NAME']
     # }
 
+    # request = {
+    #     ACTION: "GET_USERS_IN_GROUPS",
+    #     "GROUP": self.selected_group,
+    #     "USER": self.user['name'],
+    #     'METHOD': method
+    # }
     def add_in_group(self, request):
         self.db.add_user_in_group(username=request['USER'], groupname=request['GROUP'], is_admin=False)
         responce = {
@@ -72,6 +78,34 @@ class GroupManager:
             'ADDED' : True
         }
         return responce
+
+    def add_in_admin(self, request):
+        self.db.add_user_in_admin(username=request['USER'], groupname=request['GROUP'])
+        responce = {
+            ACTION: 'ADD_IN_ADMIN',
+            'USER': request['USER'],
+            'GROUP': request['GROUP'],
+            'ADDED' : True
+        }
+        return responce
+
+    def get_users_in_group(self, request):
+        if request['NO_ADMIN']:
+            users = self.db.get_users_in_group_no_admin(request['GROUP'])
+        else:
+            users = self.db.get_users_in_group(request['GROUP'])
+
+        users_json = [{'NAME': user.name} for user in users]
+        responce = {
+            ACTION: 'GET_USERS_IN_GROUP',
+            'USERS': users_json,
+            'METHOD': request['METHOD']
+        }
+        return responce
+
+
+
+
 
 
 

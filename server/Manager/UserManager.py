@@ -10,7 +10,7 @@ class UserManager:
         friends = self.db.get_friends(request['USER'])
         friends_json = [{'NAME': friend.name} for friend in friends]
         response = {
-            ACTION: 'GET_FRIEND',
+            ACTION: 'GET_FRIEND_GROUP',
             'FRIENDS': friends_json
         }
         return response

@@ -152,6 +152,26 @@ class DBManager:
             GroupUser.group == group.id).all()
         return users
 
+    def get_users_in_group_no_admin(self, groupname):
+
+
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        users = self.session.query(User).join(GroupUser, GroupUser.user == User.id).filter(
+            GroupUser.group == group.id, GroupUser.is_admin == False).all()
+        return users
+
+    def add_user_in_admin(self, username, groupname):
+        user = self.session.query(User).filter_by(name=username).first()
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        group_user=  self.session.query(GroupUser).filter(
+            and_(
+                GroupUser.user == user.id,
+                GroupUser.group == group.id
+            )).first()
+        group_user.is_admin = True
+        self.session.add(group_user)
+        self.session.commit()
+
 
 
 

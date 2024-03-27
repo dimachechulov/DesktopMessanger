@@ -134,9 +134,10 @@ class ParserClientMessage:
                     print(f"Server accept query{response_from}")
                 return
 
-            elif ACTION in request and request[ACTION] == 'GET_FRIEND' and \
+            elif ACTION in request and request[ACTION] == 'GET_FRIEND_GROUP' and \
                     'USER' in request:
                 response = manager.user_manager.get_friend(request)
+                response['GROUPS'] = manager.group_manager.groups_by_user(request)['GROUPS']
                 send_message(sock, response)
                 print(f"Server responce get friends{response}")
                 return
@@ -164,6 +165,18 @@ class ParserClientMessage:
                 return
 
 
+            elif ACTION in request and request[ACTION] == 'GET_USERS_IN_GROUPS' and \
+                    'USER' in request and 'GROUP' in request:
+                response = manager.group_manager.get_users_in_group(request)
+                send_message(sock, response)
+
+
+
+
+                print(f"Server responce get users in group{response}")
+                return
+
+
 
             elif ACTION in request and request[ACTION] == 'ADD_IN_GROUP' and \
                     'USER' in request and 'GROUP' in request:
@@ -172,6 +185,15 @@ class ParserClientMessage:
                 print(f"Server responce add in group{response}")
                 return
 
+            elif ACTION in request and request[ACTION] == 'ADD_IN_ADMIN' and \
+                    'USER' in request and 'GROUP' in request:
+                response = manager.group_manager.add_in_admin(request)
+                send_message(sock, response)
+                if response['USER'] in names and names[response['USER']] in clients_list:
+                    response[ACTION] = "ADDED_IN_ADMIN"
+                    send_message(names[response['USER']], response)
+                print(f"Server responce add in group{response}")
+                return
             # выход клиента
             elif ACTION in request and request[ACTION] == EXIT and \
                     ACCOUNT_NAME in request:

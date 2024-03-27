@@ -30,12 +30,14 @@ class CreateGroupWidget(QWidget):
         self.go_to_back = QPushButton('Отмена')
         self.go_to_back.setFixedHeight(50)
         self.go_to_back.clicked.connect(self.cansel)
+
         layout = QVBoxLayout()
         layout.addWidget(self.error_label)
         layout.addWidget(self.name_label)
         layout.addWidget(self.name_input)
         layout.addWidget(self.btn_create)
         layout.addWidget(self.go_to_back)
+
         self.setLayout(layout)
 
     def create(self):
@@ -50,5 +52,6 @@ class CreateGroupWidget(QWidget):
     def display_created_group(self, responce):
         if responce['CREATED']:
             self.stacked_widget.setCurrentIndex(2)
+
 
 
