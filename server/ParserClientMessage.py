@@ -169,10 +169,6 @@ class ParserClientMessage:
                     'USER' in request and 'GROUP' in request:
                 response = manager.group_manager.get_users_in_group(request)
                 send_message(sock, response)
-
-
-
-
                 print(f"Server responce get users in group{response}")
                 return
 
@@ -182,7 +178,20 @@ class ParserClientMessage:
                     'USER' in request and 'GROUP' in request:
                 response = manager.group_manager.add_in_group(request)
                 send_message(sock, response)
+                if response['USER'] in names and names[response['USER']] in clients_list:
+                    response[ACTION] = "ADDED_IN_GROUP"
+                    send_message(names[response['USER']], response)
                 print(f"Server responce add in group{response}")
+                return
+
+            elif ACTION in request and request[ACTION] == 'DELETE_FROM_GROUP' and \
+                    'USER' in request and 'GROUP' in request:
+                response = manager.group_manager.delete_from_group(request)
+                send_message(sock, response)
+                if response['USER'] in names and names[response['USER']] in clients_list:
+                    response[ACTION] = "DELETED_FROM_GROUP"
+                    send_message(names[response['USER']], response)
+                print(f"Server responce delete from group{response}")
                 return
 
             elif ACTION in request and request[ACTION] == 'ADD_IN_ADMIN' and \
@@ -194,6 +203,19 @@ class ParserClientMessage:
                     send_message(names[response['USER']], response)
                 print(f"Server responce add in group{response}")
                 return
+
+
+            elif ACTION in request and request[ACTION] == 'DELETE_ADMIN' and \
+                    'USER' in request and 'GROUP' in request:
+                response = manager.group_manager.delete_admin(request)
+                send_message(sock, response)
+                if response['USER'] in names and names[response['USER']] in clients_list:
+                    response[ACTION] = "DELETED_ADMIN"
+                    send_message(names[response['USER']], response)
+                print(f"Server responce add in group{response}")
+                return
+
+
             # выход клиента
             elif ACTION in request and request[ACTION] == EXIT and \
                     ACCOUNT_NAME in request:

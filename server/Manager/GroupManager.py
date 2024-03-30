@@ -8,13 +8,13 @@ class GroupManager:
 
     def create_group(self, request):
 
-        self.db.create_group(request['NAME'])
-
-        self.db.add_user_in_group(name=request['NAME'], username=request['ADMIN'], is_admin=True)
-
+        self.db.create_group(request['NAME'], request['ADMIN'])
+        self.db.add_user_in_group(groupname=request['NAME'], username=request['ADMIN'], is_admin=True)
         response = {
+
             ACTION: 'CREATE_GROUP',
-            'CREATED': True
+            'CREATED': True,
+            'GROUP' : request['NAME']
         }
         return response
 
@@ -31,14 +31,21 @@ class GroupManager:
         all_users_json = {user.id : user.name for user in all_users}
         messages_json = [{'CONTENT': msg.content, SENDER: all_users_json[msg.from_user],
                           'CREATE_AT': msg.created_at.strftime("%I:%M")} for msg in previous_messages]
-
-        is_admin = self.db.is_admin_in_group(request['USER'], request['NAME'])
         responce = {
             ACTION: 'OPEN_GROUP',
             'GROUP': request['NAME'],
             'MESSAGES': messages_json,
-            'IS_ADMIN':is_admin
         }
+
+        is_owner = self.db.is_owner_in_group(request['USER'], request['NAME'])
+        if is_owner:
+            responce['STATUS'] = 'OWNER'
+        else:
+            is_admin = self.db.is_admin_in_group(request['USER'], request['NAME'])
+            if is_admin:
+                responce['STATUS'] = 'ADMIN'
+            else:
+                responce['STATUS'] = 'NOTHING'
         return responce
 
     # request = {
@@ -55,6 +62,8 @@ class GroupManager:
             'GROUPS': groups_json,
         }
         return responce
+
+
 
     # request = {
     #     'TOKEN': self.token,
@@ -89,13 +98,37 @@ class GroupManager:
         }
         return responce
 
-    def get_users_in_group(self, request):
-        if request['NO_ADMIN']:
-            users = self.db.get_users_in_group_no_admin(request['GROUP'])
-        else:
-            users = self.db.get_users_in_group(request['GROUP'])
+    def delete_admin(self, request):
+        self.db.delete_admin_from_group(username=request['USER'], groupname=request['GROUP'])
+        responce = {
+            ACTION: 'DELETE_ADMIN',
+            'USER': request['USER'],
+            'GROUP': request['GROUP'],
+            'DELETED': True
+        }
+        return responce
 
-        users_json = [{'NAME': user.name} for user in users]
+    def delete_from_group(self, request):
+        self.db.delete_from_group(username=request['USER'], groupname=request['GROUP'])
+        responce = {
+            ACTION: 'DELETE_FROM_GROUP',
+            'USER': request['USER'],
+            'GROUP': request['GROUP'],
+            'DELETED': True
+        }
+        return responce
+
+    def get_users_in_group(self, request):
+        owner = self.db.get_owner(request['GROUP'])
+        if request['METHOD'] == 'DELETE_ADMIN':
+            users = self.db.get_user_in_group_only_admin(request['GROUP'])
+        else:
+            if request['NO_ADMIN']:
+                users = self.db.get_users_in_group_no_admin(request['GROUP'])
+            else:
+                users = self.db.get_users_in_group(request['GROUP'])
+
+        users_json = [{'NAME': user.name} for user in users if user.id != owner.id]
         responce = {
             ACTION: 'GET_USERS_IN_GROUP',
             'USERS': users_json,

@@ -109,8 +109,9 @@ class DBManager:
         friends = list(friends_user1) + list(friends_user2)
         return friends
 
-    def create_group(self, name):
-        group = Group(name=name)
+    def create_group(self, name, owner_name):
+        user = self.session.query(User).filter_by(name=owner_name).first()
+        group = Group(name=name, owner=user.id)
         self.session.add(group)
         self.session.commit()
 
@@ -127,11 +128,20 @@ class DBManager:
         messages = self.session.query(Message).filter(Message.group == group.id).all()
         return messages
 
+    def get_owner(self, groupname):
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        owner = self.session.query(User).filter_by(id=group.owner).first()
+        return owner
     def is_admin_in_group(self, username,groupname):
         user = self.session.query(User).filter_by(name=username).first()
         group = self.session.query(Group).filter_by(name=groupname).first()
         return self.session.query(GroupUser).filter_by(user=user.id, group=group.id).first().is_admin
 
+
+    def is_owner_in_group(self, username,groupname):
+        user = self.session.query(User).filter_by(name=username).first()
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        return user.id == group.owner
     def get_groups_by_user(self, username):
         user = self.session.query(User).filter_by(name=username).first()
         groups = self.session.query(Group).join(GroupUser, GroupUser.group == Group.id).filter(
@@ -160,6 +170,13 @@ class DBManager:
             GroupUser.group == group.id, GroupUser.is_admin == False).all()
         return users
 
+    def get_user_in_group_only_admin(self, groupname):
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        users = self.session.query(User).join(GroupUser, GroupUser.user == User.id).filter(
+            GroupUser.group == group.id, GroupUser.is_admin).all()
+        return users
+
+
     def add_user_in_admin(self, username, groupname):
         user = self.session.query(User).filter_by(name=username).first()
         group = self.session.query(Group).filter_by(name=groupname).first()
@@ -171,6 +188,32 @@ class DBManager:
         group_user.is_admin = True
         self.session.add(group_user)
         self.session.commit()
+
+    def delete_admin_from_group(self, username, groupname):
+        user = self.session.query(User).filter_by(name=username).first()
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        group_user = self.session.query(GroupUser).filter(
+            and_(
+                GroupUser.user == user.id,
+                GroupUser.group == group.id
+            )).first()
+        group_user.is_admin = False
+        self.session.add(group_user)
+        self.session.commit()
+
+
+
+    def delete_from_group(self, username, groupname):
+        user = self.session.query(User).filter_by(name=username).first()
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        group_user = self.session.query(GroupUser).filter(
+            and_(
+                GroupUser.user == user.id,
+                GroupUser.group == group.id
+            )).first()
+        self.session.delete(group_user)
+        self.session.commit()
+
 
 
 

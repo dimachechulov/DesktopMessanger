@@ -67,6 +67,8 @@ class ParserServerMessage(QThread):
                     self.ex.display_group_by_user(responce)
                 elif ACTION in responce and responce[ACTION] == 'ADD_IN_GROUP':
                     self.ex.display_add_user_in_group(responce)
+                elif ACTION in responce and responce[ACTION] == 'ADDED_IN_GROUP':
+                    self.ex.display_added_user_in_group(responce)
                 elif ACTION in responce and responce[ACTION] == 'MESSAGE_IN_GROUP':
                     self.ex.display_message_other_user_in_group(responce)
 
@@ -77,6 +79,11 @@ class ParserServerMessage(QThread):
                     self.ex.display_users_add_in_admin(responce)
                 elif ACTION in responce and responce[ACTION] == 'ADDED_IN_ADMIN':
                     self.ex.display_users_added_in_admin(responce)
+                elif ACTION in responce and responce[ACTION] == 'DELETE_ADMIN':
+                    self.ex.display_users_delete_admin(responce)
+                elif ACTION in responce and responce[ACTION] == 'DELETED_ADMIN':
+                    self.ex.display_users_deleted_admin(responce)
+
                 elif ACTION in responce and responce[ACTION] == 'DELETE_FROM_GROUP':
                     self.ex.display_delete_from_group(responce)
                 elif ACTION in responce and responce[ACTION] == 'DELETED_FROM_GROUP':

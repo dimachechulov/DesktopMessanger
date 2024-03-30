@@ -44,15 +44,23 @@ class AddAdminWidget(QWidget):
 
     def add(self, index):
         name = self.modelUser.itemFromIndex(index).text()
-        self.client.add_in_admin(name)
+        if self.info_label.text() == 'Выберите имя, того, кого хотите добавить в админы:':
+            self.client.add_in_admin(name)
+        elif self.info_label.text() == 'Выберите имя, того, кого хотите удалить из группы:':
+            self.client.delete_from_group(name)
+        elif self.info_label.text() == 'Выберите имя, того, кого хотите убрать из админов:':
+            self.client.delete_from_admin(name)
 
 
 
     def display_users_in_group(self, responce):
         if responce['METHOD'] == 'ADD_IN_ADMIN':
             self.info_label.setText('Выберите имя, того, кого хотите добавить в админы:')
-        else:
-            pass
+        elif responce['METHOD']=='DELETE_FROM_CHAT':
+            self.info_label.setText('Выберите имя, того, кого хотите удалить из группы:')
+        elif responce['METHOD'] == 'DELETE_ADMIN':
+            self.info_label.setText('Выберите имя, того, кого хотите убрать из админов:')
+        self.modelUser.clear()
         for user in responce['USERS']:
             self.modelUser.appendRow(QStandardItem(user['NAME']))
 

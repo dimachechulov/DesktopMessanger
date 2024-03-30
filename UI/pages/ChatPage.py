@@ -56,19 +56,26 @@ class ChatWidget(QWidget):
         self.btn_add_in_group.clicked.connect(self.add_in_group)
         self.btn_add_in_group.setVisible(False)
 
+        self.btn_delete_from_group = QPushButton(self)
+        self.btn_delete_from_group.move(615, 55)
+        self.btn_delete_from_group.resize(140, 50)
+        self.btn_delete_from_group.setText("Delete from chat")
+        self.btn_delete_from_group.clicked.connect(self.delete_from_group)
+        self.btn_delete_from_group.setVisible(False)
+
         self.btn_add_in_admin = QPushButton(self)
-        self.btn_add_in_admin.move(615, 55)
+        self.btn_add_in_admin.move(615, 105)
         self.btn_add_in_admin.resize(140, 50)
         self.btn_add_in_admin.setText("Add in Admins")
         self.btn_add_in_admin.clicked.connect(self.add_in_admin)
         self.btn_add_in_admin.setVisible(False)
 
-        self.btn_delete_from_group = QPushButton(self)
-        self.btn_delete_from_group.move(615, 105)
-        self.btn_delete_from_group.resize(140, 50)
-        self.btn_delete_from_group.setText("Delete from chat")
-        self.btn_delete_from_group.clicked.connect(self.delete_from_group)
-        self.btn_delete_from_group.setVisible(False)
+        self.btn_delete_admin = QPushButton(self)
+        self.btn_delete_admin.move(615, 155)
+        self.btn_delete_admin.resize(140, 50)
+        self.btn_delete_admin.setText("Delete from Admins")
+        self.btn_delete_admin.clicked.connect(self.delete_admin)
+        self.btn_delete_admin.setVisible(False)
 
         self.btn_cancel = QPushButton(self)
         self.btn_cancel.setText("Выйти")
@@ -78,8 +85,7 @@ class ChatWidget(QWidget):
 
 
 
-    def init_friends(self):
-        self.client.init_friends()
+
 
     def create_query(self):
         if self.btn_add_friend.text() == 'Add Friend':
@@ -101,7 +107,13 @@ class ChatWidget(QWidget):
         self.stacked_widget.setCurrentIndex(5)
 
     def delete_from_group(self):
-        pass
+        self.client.get_users_in_group(method='DELETE_FROM_CHAT')
+        self.stacked_widget.setCurrentIndex(5)
+
+    def delete_admin(self):
+        self.client.get_users_in_group(method='DELETE_ADMIN')
+        self.stacked_widget.setCurrentIndex(5)
+
 
     def create_client_msg(self):
         if self.client.receiver_name:
@@ -178,14 +190,21 @@ class ChatWidget(QWidget):
         self.chat.append(result)
         self.client.selected_group = responce['GROUP']
         self.client.receiver_name = None
-        if responce['IS_ADMIN']:
+        if responce['STATUS'] == 'OWNER':
             self.btn_add_in_group.setVisible(True)
             self.btn_add_in_admin.setVisible(True)
             self.btn_delete_from_group.setVisible(True)
+            self.btn_delete_admin.setVisible(True)
+        elif responce['STATUS'] == 'ADMIN':
+            self.btn_add_in_group.setVisible(True)
+            self.btn_delete_from_group.setVisible(True)
+            self.btn_delete_admin.setVisible(False)
+            self.btn_add_in_admin.setVisible(False)
         else:
             self.btn_add_in_group.setVisible(False)
-            self.btn_add_in_admin.setVisible(False)
             self.btn_delete_from_group.setVisible(False)
+            self.btn_delete_admin.setVisible(False)
+            self.btn_add_in_admin.setVisible(False)
 
     def display_message_other_user_in_group(self, responce):
         if responce["GROUP"] == self.client.selected_group:
@@ -198,21 +217,27 @@ class ChatWidget(QWidget):
     def display_users_added_in_admin(self, responce):
         if self.client.selected_group == responce['GROUP']:
             self.btn_add_in_group.setVisible(True)
-            self.btn_add_in_admin.setVisible(True)
             self.btn_delete_from_group.setVisible(True)
 
-
+    def display_users_deleted_in_admin(self, responce):
+        if self.client.selected_group == responce['GROUP']:
+            self.btn_add_in_group.setVisible(False)
+            self.btn_delete_from_group.setVisible(False)
+            self.btn_delete_admin.setVisible(False)
+            self.btn_add_in_admin.setVisible(False)
 
 
     def display_deleted_from_group(self, responce):
-        if self.client.selected_group == responce['group']:
-            self.chat.clear()
+        if self.client.selected_group == responce['GROUP']:
             self.client.selected_group = None
+            self.stacked_widget.setCurrentIndex(2)
+            # add message
 
 
     def cancel(self):
         self.client.receiver_name = None
         self.client.group = None
+        self.chat.setText("")
         self.stacked_widget.setCurrentIndex(2)
 
 

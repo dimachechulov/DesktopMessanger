@@ -407,6 +407,45 @@ class Client:
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
+    def delete_from_admin(self, name):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'DELETE_ADMIN',
+            'USER': name,
+            'GROUP': self.selected_group
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+    def delete_from_group(self, name):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'DELETE_FROM_GROUP',
+            'USER': name,
+            'GROUP': self.selected_group
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+
 
     def __del__(self):
         if self.sock:

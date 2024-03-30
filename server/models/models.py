@@ -45,6 +45,7 @@ class Group(Base):
     __tablename__ = 'group'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
+    owner = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
 
 
 class GroupUser(Base):

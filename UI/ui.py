@@ -95,6 +95,7 @@ class MainWindow(QMainWindow):
             self.stacked_widget.setCurrentIndex(2)
 
     def display_created_group(self, responce):
+        self.main_window.modelGroup.appendRow(QStandardItem(responce['GROUP']))
         self.create_group_page.display_created_group(responce)
 
     def display_open_group(self, responce):
@@ -107,6 +108,9 @@ class MainWindow(QMainWindow):
         self.stacked_widget.setCurrentIndex(6)
         if responce['ADDED']:
             pass
+
+    def display_added_user_in_group(self, responce):
+        self.main_window.modelGroup.appendRow(QStandardItem(responce['GROUP']))
 
     def display_message_other_user_in_group(self, responce):
         self.chat.display_message_other_user_in_group(responce)
@@ -121,10 +125,27 @@ class MainWindow(QMainWindow):
     def display_users_added_in_admin(self, responce):
         self.chat.display_users_added_in_admin(responce)
 
+    def display_users_delete_admin(self, responce):
+        self.stacked_widget.setCurrentIndex(6)
+        #message
+
+    def display_users_deleted_admin(self, responce):
+        self.chat.display_users_deleted_in_admin(responce)
+
     def display_delete_from_group(self, responce):
-        self.stacked_widget.setCurrentIndex(2)
+        self.stacked_widget.setCurrentIndex(6)
+        if responce['DELETED']:
+            pass
+
 
     def display_deleted_from_group(self, responce):
+        del_row = -1
+        for row in range( self.main_window.modelGroup.rowCount()):
+            item =  self.main_window.modelGroup.item(row)
+            if item.text() == responce['GROUP']:
+                del_row = row
+                break
+        self.main_window.modelGroup.removeRow(del_row)
         self.chat.display_deleted_from_group(responce)
 
 
