@@ -9,7 +9,6 @@ class GroupManager:
     def create_group(self, request):
 
         self.db.create_group(request['NAME'], request['ADMIN'])
-        self.db.add_user_in_group(groupname=request['NAME'], username=request['ADMIN'], is_admin=True)
         response = {
 
             ACTION: 'CREATE_GROUP',
@@ -122,13 +121,19 @@ class GroupManager:
         owner = self.db.get_owner(request['GROUP'])
         if request['METHOD'] == 'DELETE_ADMIN':
             users = self.db.get_user_in_group_only_admin(request['GROUP'])
+            users_json = [{'NAME': user.name} for user in users if user.id != owner.id]
+        elif request['METHOD'] == 'ADD_IN_ADMIN':
+            users = self.db.get_users_in_group_no_admin(request['GROUP'])
+            users_json = [{'NAME': user.name} for user in users if user.id != owner.id]
+        elif request['METHOD'] == 'DELETE_FROM_CHAT':
+            users = self.db.get_users_in_group(request['GROUP'])
+            users_json = [{'NAME': user.name} for user in users if user.id != owner.id]
         else:
-            if request['NO_ADMIN']:
-                users = self.db.get_users_in_group_no_admin(request['GROUP'])
-            else:
-                users = self.db.get_users_in_group(request['GROUP'])
+            users = self.db.get_users_in_group(request['GROUP'])
+            users_json = [{'NAME': user.name} for user in users]
 
-        users_json = [{'NAME': user.name} for user in users if user.id != owner.id]
+
+
         responce = {
             ACTION: 'GET_USERS_IN_GROUP',
             'USERS': users_json,

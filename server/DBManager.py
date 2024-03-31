@@ -114,6 +114,7 @@ class DBManager:
         group = Group(name=name, owner=user.id)
         self.session.add(group)
         self.session.commit()
+        self.add_user_in_group(name, owner_name, True)
 
     def add_user_in_group(self, groupname, username, is_admin):
         user = self.session.query(User).filter_by(name=username).first()

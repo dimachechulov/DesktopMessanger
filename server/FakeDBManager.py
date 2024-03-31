@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-from models.models import User, Message, Query, Friend
+from models.models import User, Message, Query, Friend, Group, GroupUser
 
 
 class FakeDBManager:
@@ -10,6 +10,8 @@ class FakeDBManager:
         self.messages = []
         self.querys = []
         self.friends = []
+        self.groups = []
+        self.group_users = []
 
 
     def create_user(self, name,email,age, password):
@@ -94,3 +96,101 @@ class FakeDBManager:
                 ids.append(friend.user2)
 
         return [user for user in self.users if user.id in ids]
+
+    def create_group(self, name, owner_name):
+        user = self.get_user_by_name(owner_name)
+        group = Group(id=len(self.groups), name=name, owner=user.id)
+        self.groups.append(group)
+        self.add_user_in_group(name, owner_name, True)
+
+
+    def get_group_by_name(self, name):
+        for group in self.groups:
+            if group.name == name:
+                return group
+        return -1
+    def add_user_in_group(self, groupname, username, is_admin):
+        user = self.get_user_by_name(username)
+        group = self.get_group_by_name(groupname)
+        group_user = GroupUser(id=len(self.group_users), group=group.id, user=user.id, is_admin=is_admin)
+        self.group_users.append(group_user)
+
+    def get_group_user(self, groupname, username):
+        user = self.get_user_by_name(username)
+        group = self.get_group_by_name(groupname)
+        for group_user in self.group_users:
+            if group_user.group == group.id and group_user.user == user.id:
+                return group_user
+        return -1
+
+
+
+    def get_messages_in_group(self, name):
+        group = self.get_group_by_name(name)
+        result = []
+        for message in self.messages:
+            if message.group == group.id:
+                result.append(message)
+        return result
+
+    def get_owner(self, groupname):
+        group = self.get_group_by_name(groupname)
+        for user in self.users:
+            if user.id == group.owner:
+                return user
+        return -1
+
+
+
+    def is_admin_in_group(self, username,groupname):
+        return self.get_group_user(groupname, username).is_admin
+
+
+    def is_owner_in_group(self, username,groupname):
+        user = self.get_user_by_name(username)
+        group = self.get_group_by_name(groupname)
+        return user.id == group.owner
+    def get_groups_by_user(self, username):
+        user = self.get_user_by_name(username)
+        id_groups = [group_user.group for group_user in self.group_users if group_user.user == user.id]
+        groups = [group for group in self.groups if group.id in id_groups]
+        return groups
+
+    def create_message_in_group(self,from_username, group,content):
+        user = self.get_user_by_name(from_username)
+        group = self.get_group_by_name(group)
+        message = Message(id=len(self.messages), from_user=user.id, group=group.id, content=content, created_at=datetime.now())
+        self.messages.append(message)
+        return message
+
+    def get_users_in_group(self,groupname):
+        group = self.get_group_by_name(groupname)
+        id_users= [group_user.user for group_user in self.group_users if group_user.group == group.id]
+        users = [user for user in self.users if user.id in id_users]
+        return users
+
+    def get_users_in_group_no_admin(self, groupname):
+        group = self.get_group_by_name(groupname)
+        id_users = [group_user.user for group_user in self.group_users if group_user.group == group.id and not group_user.is_admin]
+        users = [user for user in self.users if user.id in id_users]
+        return users
+
+    def get_user_in_group_only_admin(self, groupname):
+        group = self.get_group_by_name(groupname)
+        id_users = [group_user.user for group_user in self.group_users if group_user.group == group.id and group_user.is_admin]
+        users = [user for user in self.users if user.id in id_users]
+        return users
+
+    def add_user_in_admin(self, username, groupname):
+        group_user = self.get_group_user(groupname, username)
+        group_user.is_admin = True
+
+
+    def delete_admin_from_group(self, username, groupname):
+        group_user = self.get_group_user(groupname, username)
+        group_user.is_admin = False
+
+    def delete_from_group(self, username, groupname):
+        group_user = self.get_group_user(groupname, username)
+        self.group_users.remove(group_user)
+

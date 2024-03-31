@@ -133,7 +133,7 @@ class Client:
             DESTINATION: self.receiver_name,
             MESSAGE_TEXT: message_str
         }
-        #print(f'Сформировано сообщение: {request}')
+        print(f'Сформировано сообщение: {request}')
         #client_logger.debug(f'Сформировано сообщение: {message_dict}')
 
         try:
@@ -335,7 +335,6 @@ class Client:
             "GROUP" : self.selected_group,
             "USER" : self.user['name'],
             'METHOD' : method,
-            'NO_ADMIN' : True
         }
         print(f'Сформировано сообщение: {request}')
         # client_logger.debug(f'Сформировано сообщение: {message_dict}')
