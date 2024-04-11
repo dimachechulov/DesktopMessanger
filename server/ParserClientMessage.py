@@ -82,9 +82,30 @@ class ParserClientMessage:
             if ACTION in request and request[ACTION] == MESSAGE and \
                     SENDER in request and DESTINATION in request and \
                     MESSAGE_TEXT in request and TIME in request:
-                msg_json = manager.message_manager.create_message(request)
-                print(f"Add in route {request}")
-                messages_in_route_list.append(msg_json)
+                message = manager.message_manager.create_message(request)
+                responce = {
+                    ACTION: MESSAGE,
+                    SENDER: message[SENDER],
+                    DESTINATION: message[DESTINATION],
+                    MESSAGE_TEXT: message[MESSAGE_TEXT],
+                    "CREATE_AT": message["CREATE_AT"],
+                    "ID" : message["ID"]
+                }
+                send_message(names[message[SENDER]], responce)
+                if message[DESTINATION] in names and names[message[DESTINATION]] in clients_list:
+                    send_message(names[message[DESTINATION]], responce)
+                    print(f'Отправлено сообщение пользователю {message[DESTINATION]} '
+                          f'от пользователя {message[DESTINATION]}.')
+                    server_logger.info(f'Отправлено сообщение пользователю {message[DESTINATION]} '
+                                       f'от пользователя {message[SENDER]}.')
+                elif message[DESTINATION] in names and names[message[SENDER]] not in clients_list:
+                    print(f"ConnectionError")
+                    raise ConnectionError
+                else:
+                    print(f"ConnectionError")
+                    server_logger.error(
+                        f'Пользователь {message[DESTINATION]} не зарегистрирован на сервере, '
+                        f'отправка сообщения невозможна.')
                 return
 
 
@@ -94,7 +115,7 @@ class ParserClientMessage:
                     MESSAGE_TEXT in request and TIME in request:
                 responce, users = manager.message_manager.create_message_in_group(request)
                 for user in users:
-                    if user.name in names and names[user.name] in clients_list and user.name != responce[SENDER]:
+                    if user.name in names and names[user.name] in clients_list:
                         send_message(names[user.name], responce)
                 return
 
@@ -214,6 +235,21 @@ class ParserClientMessage:
                     send_message(names[response['USER']], response)
                 print(f"Server responce add in group{response}")
                 return
+
+            elif ACTION in request and request[ACTION] == 'DELETE_MESSAGE' and \
+                    'MESSAGE_ID' in request:
+                response = manager.message_manager.delete_message(request)
+                for user in response['USERS']:
+                    if user['NAME'] in names and names[user['NAME']] in clients_list:
+                        send_message(names[user['NAME']], response)
+                    return
+            elif ACTION in request and request[ACTION] == 'UPDATE_MESSAGE' and \
+                    'MESSAGE_ID' in request and 'UPDATE_TEXT' in request:
+                response = manager.message_manager.update_message(request)
+                for user in response['USERS']:
+                    if user['NAME'] in names and names[user['NAME']] in clients_list:
+                        send_message(names[user['NAME']], response)
+                    return
 
 
             # выход клиента

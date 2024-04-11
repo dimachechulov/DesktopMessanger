@@ -50,37 +50,7 @@ class Server:
 
         print(f'Запущен сервер, порт для подключений: {listen_port}, '
               f'адрес с которого принимаются подключения: {listen_addr}.')
-    def route_client_msg(self,message, names, clients):
-        """
-        Адресная отправка сообщений.
-        :param message: словарь сообщения
-        :param names: список зарегистрированных клиентов
-        :param clients: список слушающих клиентских сокетов
-        :return:
-        """
-        print(f"message in route: {message}")
-        print(f"message to: {message[DESTINATION]} message sender: {message[SENDER]}")
-        if message[DESTINATION] in names and names[message[DESTINATION]] in clients:
-            responce = {
-                ACTION: MESSAGE,
-                SENDER:message[SENDER],
-                DESTINATION : message[DESTINATION],
-                MESSAGE_TEXT:message[MESSAGE_TEXT],
-                "CREATE_AT": message["CREATE_AT"]
-            }
-            send_message(names[message[DESTINATION]], responce)
-            print(f'Отправлено сообщение пользователю {message[DESTINATION]} '
-                               f'от пользователя {message[DESTINATION]}.')
-            server_logger.info(f'Отправлено сообщение пользователю {message[DESTINATION]} '
-                               f'от пользователя {message[SENDER]}.')
-        elif message[DESTINATION] in names and names[message[SENDER]] not in clients:
-            print(f"ConnectionError")
-            raise ConnectionError
-        else:
-            print(f"ConnectionError")
-            server_logger.error(
-                f'Пользователь {message[DESTINATION]} не зарегистрирован на сервере, '
-                f'отправка сообщения невозможна.')
+
 
     def run(self):
         while True:
@@ -123,16 +93,7 @@ class Server:
             # print(f"All messages: {all_messages}")
             # print(f"All messages in router: {all_messages_in_router}")
             # Роутинг сообщений адресатам
-            for msg in self.all_messages_in_router:
-                try:
-                    self.route_client_msg(msg, self.all_names, w_clients)
-                except Exception as  ex:
-                    print(ex)
-                    server_logger.info(f'Связь с клиентом {msg[DESTINATION]} была потеряна')
-                    if self.all_names[msg[DESTINATION]] in self.all_clients:
-                        self.all_clients.remove(self.all_names[msg[DESTINATION]])
-                    del self.all_names[msg[DESTINATION]]
-            self.all_messages_in_router.clear()
+
 
 
 

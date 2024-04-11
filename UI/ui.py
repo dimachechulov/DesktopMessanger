@@ -148,6 +148,12 @@ class MainWindow(QMainWindow):
         self.main_window.modelGroup.removeRow(del_row)
         self.chat.display_deleted_from_group(responce)
 
+    def display_deleted_message(self, responce):
+        self.chat.display_deleted_message(responce)
+
+    def display_updated_message(self, responce):
+        self.chat.display_updated_message(responce)
+
 
 # responce = {
 #     ACTION: 'ADD_IN_ADMIN',

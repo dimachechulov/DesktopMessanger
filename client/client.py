@@ -444,6 +444,47 @@ class Client:
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
+    def delete_message(self, message_id):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'DELETE_MESSAGE',
+            'MESSAGE_ID': message_id,
+            "USERNAME" : self.user['name']
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+    def update_message(self, message_id, text):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'UPDATE_MESSAGE',
+            'MESSAGE_ID': message_id,
+            'UPDATE_TEXT': text,
+            "USERNAME": self.user['name']
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+
+
 
 
     def __del__(self):

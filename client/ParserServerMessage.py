@@ -89,6 +89,11 @@ class ParserServerMessage(QThread):
                 elif ACTION in responce and responce[ACTION] == 'DELETED_FROM_GROUP':
                     self.ex.display_deleted_from_group(responce)
 
+                elif ACTION in responce and responce[ACTION] == 'DELETED_MESSAGE':
+                    self.ex.display_deleted_message(responce)
+                elif ACTION in responce and responce[ACTION] == 'UPDATED_MESSAGE':
+                    self.ex.display_updated_message(responce)
+
 
 
 

@@ -41,6 +41,9 @@ class DBManager:
     def get_user_by_name(self, username):
         return self.session.query(User).filter_by(name=username).first()
 
+    def get_user_by_id(self, id):
+        return self.session.query(User).filter_by(id=id).first()
+
 
     def find_users_by_name(self, username):
         return self.session.query(User).filter(User.name.startswith(username)).all()
@@ -122,6 +125,9 @@ class DBManager:
         group_user = GroupUser(group=group.id, user=user.id, is_admin=is_admin)
         self.session.add(group_user)
         self.session.commit()
+
+    def get_group_by_id(self, id):
+        return self.session.query(Group).filter_by(id=id).first()
 
     def get_messages_in_group(self, name):
         group = self.session.query(Group).filter_by(name=name).first()
@@ -214,6 +220,21 @@ class DBManager:
             )).first()
         self.session.delete(group_user)
         self.session.commit()
+
+
+    def delete_message(self, message_id):
+        msg = self.session.query(Message).filter_by(id=message_id).first()
+        self.session.delete(msg)
+        self.session.commit()
+        return msg
+
+    def update_message(self, message_id, update_text):
+        msg = self.session.query(Message).filter_by(id=message_id).first()
+        msg.content = update_text
+        self.session.add(msg)
+        self.session.commit()
+        return msg
+
 
 
 

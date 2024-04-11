@@ -29,7 +29,7 @@ class GroupManager:
         all_users = self.db.get_users_in_group(request['NAME'])
         all_users_json = {user.id : user.name for user in all_users}
         messages_json = [{'CONTENT': msg.content, SENDER: all_users_json[msg.from_user],
-                          'CREATE_AT': msg.created_at.strftime("%I:%M")} for msg in previous_messages]
+                          'CREATE_AT': msg.created_at.strftime("%I:%M"), "ID": msg.id} for msg in previous_messages]
         responce = {
             ACTION: 'OPEN_GROUP',
             'GROUP': request['NAME'],
