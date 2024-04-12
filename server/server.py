@@ -20,7 +20,6 @@ server_logger = logging.getLogger('server')
 class Server:
     def __init__(self, listen_addr, listen_port, db):
         self.all_clients = []
-        self.all_messages_in_router = []
         self.all_messages = []
         self.all_names = dict()
         self.DBManager = db
@@ -78,7 +77,7 @@ class Server:
             if r_clients:
                 for r_sock in r_clients:
                     try:
-                        ParserClientMessage.parse_client_msg(receive_message(r_sock), self.all_messages_in_router, r_sock,
+                        ParserClientMessage.parse_client_msg(receive_message(r_sock), r_sock,
                                          self.all_clients, self.all_names,  self.auth_service, self.Manager)
                     except Exception as ex:
                         server_logger.error(f'Клиент отключился от сервера. '

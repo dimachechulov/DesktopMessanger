@@ -14,7 +14,7 @@ server_logger = logging.getLogger('server')
 class ParserClientMessage:
 
     @staticmethod
-    def parse_client_msg(request, messages_in_route_list, sock, clients_list, names,  auth, manager):
+    def parse_client_msg(request, sock, clients_list, names,  auth, manager):
         """
         Обработчик сообщений клиентов
         :param message: словарь сообщения
@@ -242,19 +242,26 @@ class ParserClientMessage:
                 for user in response['USERS']:
                     if user['NAME'] in names and names[user['NAME']] in clients_list:
                         send_message(names[user['NAME']], response)
-                    return
+                return
             elif ACTION in request and request[ACTION] == 'UPDATE_MESSAGE' and \
                     'MESSAGE_ID' in request and 'UPDATE_TEXT' in request:
                 response = manager.message_manager.update_message(request)
                 for user in response['USERS']:
                     if user['NAME'] in names and names[user['NAME']] in clients_list:
                         send_message(names[user['NAME']], response)
-                    return
+                return
+
+            elif ACTION in request and request[ACTION] == 'SEARCH_MESSAGE' and \
+                    'SEARCH_TEXT' in request and 'USERNAME' in request:
+                response = manager.message_manager.search_message(request)
+                send_message(names[request['USERNAME']], response)
+                return
 
 
             # выход клиента
             elif ACTION in request and request[ACTION] == EXIT and \
                     ACCOUNT_NAME in request:
+                print(f"User {request[USER][ACCOUNT_NAME]} exit")
                 clients_list.remove(names[request[USER][ACCOUNT_NAME]])
                 names[request[USER][ACCOUNT_NAME]].close()
                 del names[request[USER][ACCOUNT_NAME]]

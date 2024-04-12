@@ -235,6 +235,16 @@ class DBManager:
         self.session.commit()
         return msg
 
+    def search_message_in_group(self, search_text, groupname):
+
+        group = self.session.query(Group).filter_by(name=groupname).first()
+        msgs = self.session.query(Message).filter(Message.group == group.id, Message.content.startswith(search_text)).all()
+        return msgs
+
+    def search_message_in_chat(self, search_text, to_name):
+        to = self.session.query(User).filter_by(name=to_name).first()
+        msgs = self.session.query(Message).filter(Message.to_user == to.id, Message.content.startswith(search_text)).all()
+        return msgs
 
 
 

@@ -46,27 +46,33 @@ class MessageManager:
 
     def delete_message(self, request):
         msg = self.db.delete_message(request["MESSAGE_ID"])
+        to, group = None, None
         if msg.group:
             group = self.db.get_group_by_id(msg.group)
-            users = [{'NAME': user.name} for user in self.db.get_users_in_group(group.name) if user.name != request['USERNAME']]
+            users = [{'NAME': user.name} for user in self.db.get_users_in_group(group.name)]
         else:
-            users = [{'NAME':self.db.get_user_by_id(msg.to_user).name}]
+            to = self.db.get_user_by_id(msg.to_user).name
+            users = [{'NAME':to}, {'NAME':self.db.get_user_by_id(msg.from_user).name}]
 
         responce = {
             ACTION: "DELETED_MESSAGE",
             "USERS" : users,
             "DELETED" : True,
-            "MESSAGE_ID" : msg.id
+            "MESSAGE_ID" : msg.id,
+            DESTINATION : to,
+            "GROUP" : group.name
         }
         return responce
 
     def update_message(self, request):
+        to, group = None, None
         msg = self.db.update_message(request['MESSAGE_ID'], request['UPDATE_TEXT'])
         if msg.group:
             group = self.db.get_group_by_id(msg.group)
-            users = [{'NAME': user.name} for user in self.db.get_users_in_group(group.name) if user.name != request['USERNAME']]
+            users = [{'NAME': user.name} for user in self.db.get_users_in_group(group.name)]
         else:
-            users = [{'NAME':self.db.get_user_by_id(msg.to_user).name}]
+            to = self.db.get_user_by_id(msg.to_user).name
+            users = [{'NAME':to}, {'NAME':self.db.get_user_by_id(msg.from_user).name}]
 
         responce = {
             ACTION: "UPDATED_MESSAGE",
@@ -74,6 +80,32 @@ class MessageManager:
             "UPDATED": True,
             "MESSAGE_ID": msg.id,
             SENDER: self.db.get_user_by_id(msg.from_user).name,
-            "UPDATE_TEXT": request['UPDATE_TEXT']
+            "UPDATE_TEXT": request['UPDATE_TEXT'],
+            DESTINATION: to,
+            "GROUP": group.name
         }
         return responce
+
+    # request = {
+    #     'TOKEN': self.token,
+    #     ACTION: 'SEARCH_MESSAGE',
+    #     "SEARCH_TEXT": search_text,
+    #     "USERNAME": self.user['name'],
+    #     "GROUP": self.selected_group,
+    #     "TO": self.receiver_name
+    # }
+
+    def search_message(self, request):
+        if request['GROUP']:
+            msgs = self.db.search_message_in_group(search_text=request['SEARCH_TEXT'], groupname= request['GROUP'])
+        else:
+            msgs = self.db.search_message_in_chat(search_text=request['SEARCH_TEXT'], to_name= request['TO'])
+        msgs_id = [msg.id for msg in msgs]
+
+        responce = {
+            ACTION: "SEARCH_MESSAGE",
+            "MESSAGES_ID": msgs_id,
+        }
+        return responce
+
+

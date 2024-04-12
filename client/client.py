@@ -483,6 +483,29 @@ class Client:
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
+    def search_message(self, search_text):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'SEARCH_MESSAGE',
+            "SEARCH_TEXT": search_text,
+            "USERNAME": self.user['name'],
+            "GROUP" : self.selected_group,
+            "TO" : self.receiver_name
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+
+
 
 
 

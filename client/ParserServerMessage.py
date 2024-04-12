@@ -94,6 +94,8 @@ class ParserServerMessage(QThread):
                 elif ACTION in responce and responce[ACTION] == 'UPDATED_MESSAGE':
                     self.ex.display_updated_message(responce)
 
+                elif ACTION in responce and responce[ACTION] == 'SEARCH_MESSAGE':
+                    self.ex.display_search_message(responce)
 
 
 

@@ -154,6 +154,9 @@ class MainWindow(QMainWindow):
     def display_updated_message(self, responce):
         self.chat.display_updated_message(responce)
 
+    def display_search_message(self, responce):
+        self.chat.display_search_message(responce)
+
 
 # responce = {
 #     ACTION: 'ADD_IN_ADMIN',

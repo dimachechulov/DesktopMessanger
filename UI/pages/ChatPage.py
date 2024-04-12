@@ -2,7 +2,8 @@ from datetime import datetime
 
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QTextBrowser, QListView
+from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QTextBrowser, QListView, \
+    QAbstractItemView
 from PyQt5 import QtCore
 
 from configs.default import SENDER, MESSAGE_TEXT, DESTINATION
@@ -17,6 +18,8 @@ class ChatWidget(QWidget):
         self.initUI()
         self.selected_message = None
         self.messages = None
+        self.now_search = None
+        self.search_messages = None
 
 
     def initUI(self):
@@ -36,7 +39,7 @@ class ChatWidget(QWidget):
         self.chat.clicked[QModelIndex].connect(self.select_message)
         self.chat.setModel(self.modelchat)
         self.chat.setObjectName("listView-2")
-
+        self.chat.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.btn_send_message = QPushButton(self)
         self.btn_send_message.setText("Отправить сообщение")
         self.btn_send_message.move(5, 705)
@@ -82,30 +85,69 @@ class ChatWidget(QWidget):
         self.btn_delete_admin.clicked.connect(self.delete_admin)
         self.btn_delete_admin.setVisible(False)
 
-        self.btn_delete_message = QPushButton(self)
-        self.btn_delete_message.move(615, 215)
-        self.btn_delete_message.resize(140, 50)
-        self.btn_delete_message.setText("Delete selected message")
-        self.btn_delete_message.clicked.connect(self.delete_message)
-        self.btn_delete_message.setVisible(False)
 
-        self.btn_change_message = QPushButton(self)
-        self.btn_change_message.move(615, 265)
-        self.btn_change_message.resize(140, 50)
-        self.btn_change_message.setText("Change selected message")
-        self.btn_change_message.clicked.connect(self.change_message)
-        self.btn_change_message.setVisible(False)
-        self.change_message_input = QLineEdit(self)
-        self.change_message_input.move(615, 320)
-        self.change_message_input.setFont(QFont('Arial', 14))
-        self.change_message_input.setPlaceholderText("Enter changed text")
-        self.change_message_input.setVisible(False)
 
         self.btn_cancel = QPushButton(self)
         self.btn_cancel.setText("Выйти")
         self.btn_cancel.move(660, 750)
         self.btn_cancel.resize(140, 50)
         self.btn_cancel.clicked.connect(self.cancel)
+
+
+
+        self.btn_delete_message = QPushButton(self)
+        self.btn_delete_message.move(615, 450)
+        self.btn_delete_message.resize(140, 50)
+        self.btn_delete_message.setText("Delete selected message")
+        self.btn_delete_message.clicked.connect(self.delete_message)
+        self.btn_delete_message.setVisible(False)
+
+        self.btn_change_message = QPushButton(self)
+        self.btn_change_message.move(615, 500)
+        self.btn_change_message.resize(140, 50)
+        self.btn_change_message.setText("Change selected message")
+        self.btn_change_message.clicked.connect(self.change_message)
+        self.btn_change_message.setVisible(False)
+
+        self.change_message_input = QLineEdit(self)
+        self.change_message_input.move(615, 550)
+        self.change_message_input.setFont(QFont('Arial', 14))
+        self.change_message_input.setPlaceholderText("Enter changed text")
+        self.change_message_input.setVisible(False)
+
+        self.btn_search = QPushButton(self)
+        self.btn_search.move(615, 215)
+        self.btn_search.resize(140, 50)
+        self.btn_search.setText("Search messages")
+        self.btn_search.clicked.connect(self.search_message)
+        self.btn_search.setVisible(True)
+
+        self.search_input = QLineEdit(self)
+        self.search_input.move(615, 265)
+        self.search_input.setFont(QFont('Arial', 14))
+        self.search_input.setPlaceholderText("Enter search message")
+        self.search_input.setVisible(True)
+
+        self.btn_search_back = QPushButton(self)
+        self.btn_search_back.move(615, 290)
+        self.btn_search_back.resize(140, 50)
+        self.btn_search_back.setText("Back")
+        self.btn_search_back.clicked.connect(self.search_back)
+        self.btn_search_back.setVisible(False)
+
+        self.btn_search_next = QPushButton(self)
+        self.btn_search_next.move(615, 340)
+        self.btn_search_next.resize(140, 50)
+        self.btn_search_next.setText("Next")
+        self.btn_search_next.clicked.connect(self.search_next)
+        self.btn_search_next.setVisible(False)
+
+        self.btn_complete_search = QPushButton(self)
+        self.btn_complete_search.move(615, 390)
+        self.btn_complete_search.resize(140, 50)
+        self.btn_complete_search.setText("Complete search")
+        self.btn_complete_search.clicked.connect(self.complete_search)
+        self.btn_complete_search.setVisible(False)
 
 
 
@@ -140,16 +182,13 @@ class ChatWidget(QWidget):
 
 
     def create_client_msg(self):
+        message_str = self.tb_send_message.text()
+        if not message_str:
+            return
+        self.tb_send_message.setText("")
         if self.client.receiver_name:
-            message_str = self.tb_send_message.text()
-            now = datetime.now().strftime("%I:%M")
-            #self.modelchat.appendRow(QStandardItem(f'{now}[you]: {message_str}'))
-
             self.client.create_client_msg(message_str)
         elif self.client.selected_group:
-            message_str = self.tb_send_message.text()
-            now = datetime.now().strftime("%I:%M")
-            #self.modelchat.appendRow(QStandardItem(f'{now}[you]: {message_str}'))
             self.client.create_client_msg_in_group(message_str)
 
     def select_message(self, index):
@@ -163,17 +202,54 @@ class ChatWidget(QWidget):
             self.btn_delete_message.setVisible(False)
             self.change_message_input.setVisible(False)
 
+
     def delete_message(self):
-        self.modelchat.removeRow(self.messages.index(self.selected_message))
-        self.messages.remove(self.selected_message)
         self.client.delete_message(message_id=self.selected_message["ID"])
+        self.selected_message = None
+        self.btn_change_message.setVisible(False)
+        self.btn_delete_message.setVisible(False)
+        self.change_message_input.setVisible(False)
+        # index = self.messages.index(self.selected_message)
+        # # self.messages.remove(self.selected_message)
+        # if index != len(self.messages)-1:# and len(self.messages)!=1:
+        #     self.selected_message = self.messages[index+1]
+        #     if self.selected_message[SENDER] == self.client.user['name']:
+        #         self.btn_change_message.setVisible(True)
+        #         self.btn_delete_message.setVisible(True)
+        #         self.change_message_input.setVisible(True)
+        #     else:
+        #         self.btn_change_message.setVisible(False)
+        #         self.btn_delete_message.setVisible(False)
+        #         self.change_message_input.setVisible(False)
+        # elif index != 0:
+        #     self.selected_message = self.messages[index-1]
+        #     if self.selected_message[SENDER] == self.client.user['name']:
+        #         self.btn_change_message.setVisible(True)
+        #         self.btn_delete_message.setVisible(True)
+        #         self.change_message_input.setVisible(True)
+        #     else:
+        #         self.btn_change_message.setVisible(False)
+        #         self.btn_delete_message.setVisible(False)
+        #         self.change_message_input.setVisible(False)
+        # else:
+
+
 
     def change_message(self):
         updated_text = self.change_message_input.text()
-        item = self.modelchat.itemFromIndex(self.modelchat.index(self.messages.index(self.selected_message),0))
-        item.setText(f'{self.selected_message["CREATE_AT"]}[you]: {updated_text}')
-        self.selected_message['TEXT'] = updated_text
+        self.change_message_input.setText("")
+        if not updated_text:
+            return
+
+        # item = self.modelchat.itemFromIndex(self.modelchat.index(self.messages.index(self.selected_message),0))
+        # item.setText(f'{self.selected_message["CREATE_AT"]}[you]: {updated_text}')
+        # self.selected_message['TEXT'] = updated_text
         self.client.update_message(message_id=self.selected_message["ID"], text=updated_text)
+        self.selected_message = None
+        self.btn_change_message.setVisible(False)
+        self.btn_delete_message.setVisible(False)
+        self.change_message_input.setVisible(False)
+        self.chat.setCurrentIndex(QModelIndex())
 
 
     def display_message_other_user(self, responce):
@@ -318,23 +394,79 @@ class ChatWidget(QWidget):
             # add message
 
     def display_deleted_message(self, responce):
-        msg_id = responce['MESSAGE_ID']
-        list_id = None
-        for id, message in enumerate(self.messages):
-            if message["ID"] == msg_id:
-                list_id = id
-                self.messages.remove(message)
-                break
-        self.modelchat.removeRow(list_id)
+        if (responce['GROUP'] is not None and self.client.selected_group == responce['GROUP'])\
+                or (responce[DESTINATION] is not None and self.client.receiver_name == responce[DESTINATION]):
+            msg_id = responce['MESSAGE_ID']
+            list_id = None
+            for id, message in enumerate(self.messages):
+                if message["ID"] == msg_id:
+                    list_id = id
+                    self.messages.remove(message)
+                    break
+            self.modelchat.removeRow(list_id)
 
     def display_updated_message(self, responce):
-        msg_id = responce['MESSAGE_ID']
+        if (responce['GROUP'] is not None and self.client.selected_group == responce['GROUP']) \
+                or (responce[DESTINATION] is not None and self.client.receiver_name == responce[DESTINATION]):
+            msg_id = responce['MESSAGE_ID']
+            for id, message in enumerate(self.messages):
+                if message["ID"] == msg_id:
+                    message['TEXT'] = responce["UPDATE_TEXT"]
+                    item = self.modelchat.itemFromIndex(self.modelchat.index(id, 0))
+                    if responce[SENDER] == self.client.user['name']:
+                        item.setText(f'{message["CREATE_AT"]}[you]: {responce["UPDATE_TEXT"]}')
+                    else:
+                        item.setText(f'{message["CREATE_AT"]}[{responce[SENDER]}]: {responce["UPDATE_TEXT"]}')
+                    break
+
+    def search_message(self):
+        search_text = self.search_input.text()
+        if not search_text:
+            return
+        self.client.search_message(search_text)
+
+    def display_search_message(self, responce):
+        if not responce['MESSAGES_ID']:
+            #add message "not search messages"
+            return
+
+        self.search_messages = responce['MESSAGES_ID']
+        self.now_search = 0
+        self.btn_search_next.setVisible(True)
+        self.btn_search_back.setVisible(True)
+        self.btn_complete_search.setVisible(True)
         for id, message in enumerate(self.messages):
-            if message["ID"] == msg_id:
-                message['TEXT'] = responce["UPDATE_TEXT"]
-                item = self.modelchat.itemFromIndex(self.modelchat.index(id, 0))
-                item.setText(f'{message["CREATE_AT"]}[{responce[SENDER]}]: {responce["UPDATE_TEXT"]}')
-                break
+            if message["ID"] == self.search_messages[self.now_search]:
+                self.chat.setCurrentIndex(self.modelchat.index(id, 0))
+
+    def search_next(self):
+        if self.now_search == len(self.search_messages)-1:
+            return
+        self.now_search +=1
+        for id, message in enumerate(self.messages):
+            if message["ID"] == self.search_messages[self.now_search]:
+                self.chat.setCurrentIndex(self.modelchat.index(id, 0))
+
+    def search_back(self):
+        if self.now_search == 0:
+            return
+        self.now_search -=1
+        for id, message in enumerate(self.messages):
+            if message["ID"] == self.search_messages[self.now_search]:
+                self.chat.setCurrentIndex(self.modelchat.index(id, 0))
+
+    def complete_search(self):
+        self.now_search = None
+        self.search_messages = None
+        self.btn_search_back.setVisible(False)
+        self.btn_search_next.setVisible(False)
+        self.btn_complete_search.setVisible(False)
+        self.search_input.setText("")
+        self.chat.setCurrentIndex(QModelIndex())
+
+
+
+
 
 
 
@@ -343,7 +475,7 @@ class ChatWidget(QWidget):
 
     def cancel(self):
         self.client.receiver_name = None
-        self.client.group = None
+        self.client.selected_group = None
         self.modelchat.clear()
         self.stacked_widget.setCurrentIndex(2)
 
@@ -351,9 +483,4 @@ class ChatWidget(QWidget):
 
 
 
-# responce = {
-#     ACTION: 'OPEN_GROUP',
-#     'MESSAGES': messages_json,
-#     'IS_ADMIN': self.db.is_admin_in_group(request['USER'], request['NAME'])
-# }
 
