@@ -60,6 +60,7 @@ class AddInGroupWidget(QWidget):
         self.client.get_user_by_name(name, method="InAddGroup")
 
     def display_search(self, responce):
+        self.modelUser.clear()
         for user in responce['USERS']:
             self.modelUser.appendRow(QStandardItem(user['NAME']))
 

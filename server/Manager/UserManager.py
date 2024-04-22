@@ -1,3 +1,5 @@
+from SerializerDeserializerModels.SerializerDeserializerModels import SerializerDeSerializerModels
+
 from configs.default import ACTION, SENDER, DESTINATION
 
 
@@ -8,7 +10,7 @@ class UserManager:
 
     def get_friend(self, request):
         friends = self.db.get_friends(request['USER'])
-        friends_json = [{'NAME': friend.name} for friend in friends]
+        friends_json = [SerializerDeSerializerModels.user_to_json(friend) for friend in friends]
         response = {
             ACTION: 'GET_FRIEND_GROUP',
             'FRIENDS': friends_json
@@ -17,11 +19,11 @@ class UserManager:
 
     def get_user_by_name(self, request):
         users = self.db.find_users_by_name(request['NAME'])
-        users_json = [{'NAME': user.name} for user in users]
+        users_json = [SerializerDeSerializerModels.user_to_json(user) for user in users if user.name != request['USERNAME']]
         response = {
             ACTION: 'GET_USER_BY_NAME',
             'USERS': users_json,
-            'METHOD': request['METHOD']
+            'METHOD': request['METHOD'],
         }
         return response
 
@@ -36,6 +38,6 @@ class UserManager:
             else:
                 friend = self.db.is_friend(username1=request[SENDER], username2=request[DESTINATION])
                 if friend:
-                    return  "FRIEND"
+                    return "FRIEND"
                 else:
                     return "NOTHING"

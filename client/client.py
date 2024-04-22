@@ -196,7 +196,8 @@ class Client:
             ACTION: 'GET_USER_BY_NAME',
             TIME: time.time(),
             'NAME': name,
-            'METHOD' : method
+            'METHOD' : method,
+            'USERNAME': self.user['name']
         }
         print(f'Сформировано сообщение: {request}')
         # client_logger.debug(f'Сформировано сообщение: {message_dict}')
@@ -359,6 +360,20 @@ class Client:
         print(f'Сформировано сообщение: {request}')
         # client_logger.debug(f'Сформировано сообщение: {message_dict}')
 
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+    def clear_add_in_group_page(self):
+        request = {
+            "TOKEN" : self.token,
+            ACTION : "CLEAR_ADD_IN_GROUP"
+        }
         try:
             send_message(self.sock, request)
             # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')

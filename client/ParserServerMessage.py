@@ -65,6 +65,8 @@ class ParserServerMessage(QThread):
                     self.ex.display_open_group(responce)
                 elif ACTION in responce and responce[ACTION] == 'GROUPS_BY_USER':
                     self.ex.display_group_by_user(responce)
+                elif ACTION in responce and responce[ACTION] == 'CLEAR_ADD_IN_GROUP':
+                    self.ex.display_clear_add_in_group(responce)
                 elif ACTION in responce and responce[ACTION] == 'ADD_IN_GROUP':
                     self.ex.display_add_user_in_group(responce)
                 elif ACTION in responce and responce[ACTION] == 'ADDED_IN_GROUP':

@@ -166,6 +166,7 @@ class ChatWidget(QWidget):
 
 
     def add_in_group(self):
+        self.client.clear_add_in_group_page()
         self.stacked_widget.setCurrentIndex(4)
 
     def add_in_admin(self):
@@ -395,7 +396,7 @@ class ChatWidget(QWidget):
 
     def display_deleted_message(self, responce):
         if (responce['GROUP'] is not None and self.client.selected_group == responce['GROUP'])\
-                or (responce[DESTINATION] is not None and self.client.receiver_name == responce[DESTINATION]):
+                or (responce[DESTINATION] is not None and (self.client.receiver_name == responce[DESTINATION] or self.client.user['name'] == responce[DESTINATION])):
             msg_id = responce['MESSAGE_ID']
             list_id = None
             for id, message in enumerate(self.messages):
@@ -407,7 +408,7 @@ class ChatWidget(QWidget):
 
     def display_updated_message(self, responce):
         if (responce['GROUP'] is not None and self.client.selected_group == responce['GROUP']) \
-                or (responce[DESTINATION] is not None and self.client.receiver_name == responce[DESTINATION]):
+                or (responce[DESTINATION] is not None and (self.client.receiver_name == responce[DESTINATION] or self.client.user['name'] == responce[DESTINATION])):
             msg_id = responce['MESSAGE_ID']
             for id, message in enumerate(self.messages):
                 if message["ID"] == msg_id:
@@ -461,6 +462,9 @@ class ChatWidget(QWidget):
         self.btn_search_back.setVisible(False)
         self.btn_search_next.setVisible(False)
         self.btn_complete_search.setVisible(False)
+        self.btn_delete_message.setVisible(False)
+        self.btn_change_message.setVisible(False)
+        self.change_message_input.setVisible(False)
         self.search_input.setText("")
         self.chat.setCurrentIndex(QModelIndex())
 

@@ -1,5 +1,5 @@
 from configs.default import ACTION, SENDER, DESTINATION, PREVIOUS, MESSAGE_TEXT
-
+from SerializerDeserializerModels.SerializerDeserializerModels import SerializerDeSerializerModels
 
 class MessageManager:
     def __init__(self, db):
@@ -8,8 +8,7 @@ class MessageManager:
 
     def get_previous_messages(self, request):
         messages = self.db.get_messages_by_two_users(from_username=request[SENDER], to_username=request[DESTINATION])
-        messages_json = [{'CONTENT': msg.content, SENDER: msg.from_user, DESTINATION: msg.to_user,
-                          'CREATE_AT': msg.created_at.strftime("%I:%M"), "ID": msg.id} for msg in messages]
+        messages_json = [SerializerDeSerializerModels.message_to_json(msg) for msg in messages]
         response = {
             ACTION: PREVIOUS,
             SENDER: request[SENDER],
@@ -52,16 +51,18 @@ class MessageManager:
             users = [{'NAME': user.name} for user in self.db.get_users_in_group(group.name)]
         else:
             to = self.db.get_user_by_id(msg.to_user).name
-            users = [{'NAME':to}, {'NAME':self.db.get_user_by_id(msg.from_user).name}]
-
+            users = [{'NAME': to}, SerializerDeSerializerModels.user_to_json(self.db.get_user_by_id(msg.from_user))]
         responce = {
             ACTION: "DELETED_MESSAGE",
-            "USERS" : users,
-            "DELETED" : True,
-            "MESSAGE_ID" : msg.id,
-            DESTINATION : to,
-            "GROUP" : group.name
+            "USERS": users,
+            "DELETED": True,
+            "MESSAGE_ID": msg.id,
+            DESTINATION: to,
         }
+        if group is None:
+            responce['GROUP'] = None
+        else:
+            responce["GROUP"]= group.name
         return responce
 
     def update_message(self, request):
@@ -69,10 +70,10 @@ class MessageManager:
         msg = self.db.update_message(request['MESSAGE_ID'], request['UPDATE_TEXT'])
         if msg.group:
             group = self.db.get_group_by_id(msg.group)
-            users = [{'NAME': user.name} for user in self.db.get_users_in_group(group.name)]
+            users = [SerializerDeSerializerModels.user_to_json(user) for user in self.db.get_users_in_group(group.name)]
         else:
             to = self.db.get_user_by_id(msg.to_user).name
-            users = [{'NAME':to}, {'NAME':self.db.get_user_by_id(msg.from_user).name}]
+            users = [{'NAME': to}, SerializerDeSerializerModels.user_to_json(self.db.get_user_by_id(msg.from_user))]
 
         responce = {
             ACTION: "UPDATED_MESSAGE",
@@ -82,18 +83,14 @@ class MessageManager:
             SENDER: self.db.get_user_by_id(msg.from_user).name,
             "UPDATE_TEXT": request['UPDATE_TEXT'],
             DESTINATION: to,
-            "GROUP": group.name
         }
+        if group is None:
+            responce['GROUP'] = None
+        else:
+            responce["GROUP"]= group.name
         return responce
 
-    # request = {
-    #     'TOKEN': self.token,
-    #     ACTION: 'SEARCH_MESSAGE',
-    #     "SEARCH_TEXT": search_text,
-    #     "USERNAME": self.user['name'],
-    #     "GROUP": self.selected_group,
-    #     "TO": self.receiver_name
-    # }
+
 
     def search_message(self, request):
         if request['GROUP']:

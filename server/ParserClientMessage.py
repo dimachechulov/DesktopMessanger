@@ -193,6 +193,13 @@ class ParserClientMessage:
                 print(f"Server responce get users in group{response}")
                 return
 
+            elif ACTION in request and request[ACTION] == 'CLEAR_ADD_IN_GROUP':
+                responce = {
+                    ACTION: 'CLEAR_ADD_IN_GROUP'
+                }
+                send_message(sock, responce)
+                return
+
 
 
             elif ACTION in request and request[ACTION] == 'ADD_IN_GROUP' and \
@@ -249,6 +256,7 @@ class ParserClientMessage:
                 for user in response['USERS']:
                     if user['NAME'] in names and names[user['NAME']] in clients_list:
                         send_message(names[user['NAME']], response)
+                        print(f"Server responce {response}")
                 return
 
             elif ACTION in request and request[ACTION] == 'SEARCH_MESSAGE' and \

@@ -4,7 +4,7 @@ import psycopg2
 from sqlalchemy import create_engine, or_, and_
 from sqlalchemy.orm import sessionmaker
 
-from models.models import User, Base, Message, Query, Friend, Group, GroupUser
+from SerializerDeserializerModels.models import User, Base, Message, Query, Friend, Group, GroupUser
 
 
 # conn = None
@@ -222,6 +222,7 @@ class DBManager:
         self.session.commit()
 
 
+
     def delete_message(self, message_id):
         msg = self.session.query(Message).filter_by(id=message_id).first()
         self.session.delete(msg)
@@ -243,8 +244,9 @@ class DBManager:
 
     def search_message_in_chat(self, search_text, to_name):
         to = self.session.query(User).filter_by(name=to_name).first()
-        msgs = self.session.query(Message).filter(Message.to_user == to.id, Message.content.startswith(search_text)).all()
-        return msgs
+        msgs_to = self.session.query(Message).filter(Message.to_user == to.id, Message.content.startswith(search_text)).all()
+        msgs_from = self.session.query(Message).filter(Message.from_user == to.id, Message.content.startswith(search_text)).all()
+        return msgs_to + msgs_from
 
 
 

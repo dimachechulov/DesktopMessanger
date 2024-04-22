@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-from models.models import User, Message, Query, Friend, Group, GroupUser
+from SerializerDeserializerModels.models import User, Message, Query, Friend, Group, GroupUser
 
 
 class FakeDBManager:
@@ -194,3 +194,42 @@ class FakeDBManager:
         group_user = self.get_group_user(groupname, username)
         self.group_users.remove(group_user)
 
+    def delete_message(self, message_id):
+        for message in self.messages:
+            if message.id == message_id:
+                self.messages.remove(message)
+                return message
+
+    def update_message(self, message_id, update_text):
+        for message in self.messages:
+            if message.id == message_id:
+                message.content = update_text
+                return message
+
+    def search_message_in_group(self, search_text, groupname):
+        seleted_group = None
+        for group in self.groups:
+            if group.name == groupname:
+                seleted_group = group
+        result = []
+        for msg in self.messages:
+            if msg.content.startswith(search_text) and msg.group == seleted_group.id:
+                result.append(msg)
+        return result
+
+    def search_message_in_chat(self, search_text, to_name):
+        to = None
+        for user in self.users:
+            if user.name == to_name:
+                to = user
+        result = []
+        for msg in self.messages:
+            if msg.content.startswith(search_text) and msg.to_user == to.id:
+                result.append(msg)
+        return result
+
+    def get_user_by_id(self, id):
+        for user in self.users:
+            if user.id == id:
+                return user
+        return None

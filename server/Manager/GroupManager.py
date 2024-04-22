@@ -1,3 +1,5 @@
+from SerializerDeserializerModels.SerializerDeserializerModels import SerializerDeSerializerModels
+
 from configs.default import ACTION, SENDER, DESTINATION, PREVIOUS, MESSAGE_TEXT
 
 
@@ -28,8 +30,9 @@ class GroupManager:
         previous_messages = self.db.get_messages_in_group(request['NAME'])
         all_users = self.db.get_users_in_group(request['NAME'])
         all_users_json = {user.id : user.name for user in all_users}
-        messages_json = [{'CONTENT': msg.content, SENDER: all_users_json[msg.from_user],
-                          'CREATE_AT': msg.created_at.strftime("%I:%M"), "ID": msg.id} for msg in previous_messages]
+        messages_json = [SerializerDeSerializerModels.message_to_json(msg) for msg in previous_messages]
+        for messages in messages_json:
+            messages['FROM'] = all_users_json[messages['FROM']]
         responce = {
             ACTION: 'OPEN_GROUP',
             'GROUP': request['NAME'],
@@ -55,7 +58,7 @@ class GroupManager:
 
     def groups_by_user(self, request):
         groups = self.db.get_groups_by_user(request['USER'])
-        groups_json = [{'NAME': group.name} for group in groups]
+        groups_json = [SerializerDeSerializerModels.group_to_json(group) for group in groups]
         responce = {
             ACTION: 'GROUPS_BY_USER',
             'GROUPS': groups_json,
@@ -121,16 +124,16 @@ class GroupManager:
         owner = self.db.get_owner(request['GROUP'])
         if request['METHOD'] == 'DELETE_ADMIN':
             users = self.db.get_user_in_group_only_admin(request['GROUP'])
-            users_json = [{'NAME': user.name} for user in users if user.id != owner.id]
+            users_json = [SerializerDeSerializerModels.user_to_json(user) for user in users if user.id != owner.id]
         elif request['METHOD'] == 'ADD_IN_ADMIN':
             users = self.db.get_users_in_group_no_admin(request['GROUP'])
-            users_json = [{'NAME': user.name} for user in users if user.id != owner.id]
+            users_json = [SerializerDeSerializerModels.user_to_json(user) for user in users if user.id != owner.id ]
         elif request['METHOD'] == 'DELETE_FROM_CHAT':
             users = self.db.get_users_in_group(request['GROUP'])
-            users_json = [{'NAME': user.name} for user in users if user.id != owner.id]
+            users_json = [SerializerDeSerializerModels.user_to_json(user)  for user in users if user.id != owner.id and user.name != request['USER']]
         else:
             users = self.db.get_users_in_group(request['GROUP'])
-            users_json = [{'NAME': user.name} for user in users]
+            users_json = [SerializerDeSerializerModels.user_to_json(user) for user in users] # if user.id != owner.id
 
 
 

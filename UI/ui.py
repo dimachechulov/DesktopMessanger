@@ -104,6 +104,10 @@ class MainWindow(QMainWindow):
     def display_group_by_user(self, responce):
         self.main_window.display_group_by_user(responce)
 
+    def display_clear_add_in_group(self, responce):
+        self.add_in_group.user_input.setText("")
+        self.add_in_group.modelUser.clear()
+
     def display_add_user_in_group(self, responce):
         self.stacked_widget.setCurrentIndex(6)
         if responce['ADDED']:
