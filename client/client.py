@@ -519,6 +519,26 @@ class Client:
             # client_logger.critical('Потеряно соединение с сервером.')
             sys.exit(1)
 
+    def view_profile(self, username):
+        request = {
+            'TOKEN': self.token,
+            ACTION: 'VIEW_PROFILE',
+            'USERNAME': username,
+            'OWNER_USERNAME' : self.user['name']
+        }
+        print(f'Сформировано сообщение: {request}')
+        # client_logger.debug(f'Сформировано сообщение: {message_dict}')
+
+        try:
+            send_message(self.sock, request)
+            # client_logger.info(f'Отправлено сообщение для пользователя {self.receiver_name}')
+        except Exception as ex:
+            print(ex)
+            print('Потеряно соединение с сервером.')
+            # client_logger.critical('Потеряно соединение с сервером.')
+            sys.exit(1)
+
+
 
 
 

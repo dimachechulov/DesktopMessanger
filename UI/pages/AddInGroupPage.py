@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QListView
+from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QListView, QAbstractItemView
 from sqlalchemy.exc import DataError
 
 
@@ -34,6 +34,7 @@ class AddInGroupWidget(QWidget):
         self.listUser.clicked[QModelIndex].connect(self.add)
         self.listUser.setModel(self.modelUser)
         self.listUser.setObjectName("listView-2")
+        self.listUser.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.btn_cancel = QPushButton(self)
         self.btn_cancel.setText("Выйти")
         self.btn_cancel.move(660, 750)

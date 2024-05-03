@@ -17,7 +17,7 @@ import logs.client_log_config
 from UI.pages.AddAdminPage import AddAdminWidget
 from UI.pages.AddInGroupPage import AddInGroupWidget
 from UI.pages.ChatPage import ChatWidget
-
+from UI.pages.ProfilePage import ProfileWidget
 
 from client.ParserServerMessage import ParserServerMessage
 
@@ -50,6 +50,7 @@ class MainWindow(QMainWindow):
         self.add_in_group = AddInGroupWidget(self.stacked_widget, self.client)
         self.add_in_admin = AddAdminWidget(self.stacked_widget, self.client)
         self.chat = ChatWidget(self.stacked_widget, self.client)
+        self.profile = ProfileWidget(self.stacked_widget, self.client)
         self.stacked_widget.addWidget(self.reg_window)
         self.stacked_widget.addWidget(self.login_page)
         self.stacked_widget.addWidget(self.main_window)
@@ -57,6 +58,7 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(self.add_in_group)
         self.stacked_widget.addWidget(self.add_in_admin)
         self.stacked_widget.addWidget(self.chat)
+        self.stacked_widget.addWidget(self.profile)
         self.setCentralWidget(self.stacked_widget)
 
     def display_message_other_user(self, responce):
@@ -160,6 +162,10 @@ class MainWindow(QMainWindow):
 
     def display_search_message(self, responce):
         self.chat.display_search_message(responce)
+
+    def display_profile(self, response):
+        self.stacked_widget.setCurrentIndex(7)
+        self.profile.display_profile(response)
 
 
 # responce = {

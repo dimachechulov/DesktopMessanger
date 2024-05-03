@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtGui import QFont, QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QListView
+from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QListView, QAbstractItemView
 from sqlalchemy.exc import DataError
 
 
@@ -29,6 +29,7 @@ class AddAdminWidget(QWidget):
         self.listUser.clicked[QModelIndex].connect(self.add)
         self.listUser.setModel(self.modelUser)
         self.listUser.setObjectName("listView-2")
+        self.listUser.setEditTriggers(QAbstractItemView.NoEditTriggers)
         layout = QVBoxLayout()
         layout.addWidget(self.info_label)
         layout.addWidget(self.listUser)

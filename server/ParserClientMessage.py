@@ -265,6 +265,18 @@ class ParserClientMessage:
                 send_message(names[request['USERNAME']], response)
                 return
 
+            # request = {
+            #     'TOKEN': self.token,
+            #     ACTION: 'VIEW_PROFILE',
+            #     'USERNAME': self.receiver_name,
+            # }
+
+            elif ACTION in request and request[ACTION] == 'VIEW_PROFILE' and \
+                    'USERNAME' in request:
+                response = manager.user_manager.get_profile(request)
+                send_message(names[request['OWNER_USERNAME']], response)
+                return
+
 
             # выход клиента
             elif ACTION in request and request[ACTION] == EXIT and \

@@ -99,6 +99,11 @@ class ParserServerMessage(QThread):
                 elif ACTION in responce and responce[ACTION] == 'SEARCH_MESSAGE':
                     self.ex.display_search_message(responce)
 
+                elif ACTION in responce and responce[ACTION] == 'VIEW_PROFILE':
+                    self.ex.display_profile(responce)
+
+
+
 
 
 

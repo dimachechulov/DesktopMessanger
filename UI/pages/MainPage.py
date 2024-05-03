@@ -19,11 +19,7 @@ class MyApp(QWidget):
     def initAfterLogin(self):
 
         self.init_friends_group()
-        # self.init_group()
-        if self.client.user:
-            self.name.setText(f"You name is {self.client.user['name']}")
-        else:
-            self.name.setText(f"You name is anom")
+
     def initUI(self):
 
         self.setGeometry(800, 800, 800, 650)
@@ -69,7 +65,7 @@ class MyApp(QWidget):
 
 
         self.btn_change_chat = QPushButton(self)
-        self.btn_change_chat.setText("Поиск чата")
+        self.btn_change_chat.setText("Поиск пользователя")
         self.btn_change_chat.move(555, 5)
         self.btn_change_chat.resize(250, 40)
         self.btn_change_chat.clicked.connect(self.get_users_by_name)
@@ -93,11 +89,13 @@ class MyApp(QWidget):
         self.listUsers.setModel(self.model)
         self.listUsers.setObjectName("listView-1")
 
-        self.name = QLabel(self)
+        self.btn_view_profile = QPushButton(self)
+        self.btn_view_profile.setText("Профиль")
+        self.btn_view_profile.move(555, 500)
+        self.btn_view_profile.resize(200, 40)
+        self.btn_view_profile.clicked.connect(self.view_profile)
 
-        self.name.move(555, 500)
-        self.name.resize(200, 40)
-        self.name.setFont(QFont('Arial', 16))
+
 
 
 
@@ -145,6 +143,10 @@ class MyApp(QWidget):
             self.client.receiver_name = self.modelFriend.itemFromIndex(index).text()
         self.client.display_previous_message()
 
+    def view_profile(self):
+        self.client.view_profile(username=self.client.user['name'])
+
+
 
     def display_users_by_name(self, responce):
         self.model.clear()
@@ -168,6 +170,8 @@ class MyApp(QWidget):
             self.modelGroup.appendRow(QStandardItem(group['NAME']))
         for friend in responce['FRIENDS']:
             self.modelFriend.appendRow(QStandardItem(friend['NAME']))
+
+
 
 
 

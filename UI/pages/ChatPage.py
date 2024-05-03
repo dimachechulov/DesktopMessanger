@@ -17,7 +17,7 @@ class ChatWidget(QWidget):
         self.client = client
         self.initUI()
         self.selected_message = None
-        self.messages = None
+        self.messages = []
         self.now_search = None
         self.search_messages = None
 
@@ -49,6 +49,13 @@ class ChatWidget(QWidget):
         self.tb_send_message = QLineEdit(self)
         self.tb_send_message.move(145, 705)
         self.tb_send_message.resize(470, 50)
+
+        self.btn_view_profile = QPushButton(self)
+        self.btn_view_profile.setText("Профиль")
+        self.btn_view_profile.move(450, 5)
+        self.btn_view_profile.resize(140, 50)
+        self.btn_view_profile.clicked.connect(self.view_profile)
+        self.btn_view_profile.setVisible(False)
 
         self.btn_add_friend = QPushButton(self)
         self.btn_add_friend.move(615, 5)
@@ -280,7 +287,7 @@ class ChatWidget(QWidget):
         self.change_message_input.setVisible(False)
         self.lbl_info_chat.setText(f'Chat with {self.client.receiver_name}')
         messages = responce['MESSAGE']
-        self.messages = []
+        self.messages.clear()
         for index in range(len(messages)):
 
             if messages[index][SENDER] != self.client.user['id']:
@@ -307,6 +314,7 @@ class ChatWidget(QWidget):
             self.btn_add_friend.setVisible(True)
             self.btn_add_friend.setEnabled(True)
             self.btn_add_friend.setText('Add Friend')
+        self.btn_view_profile.setVisible(True)
 
 
 
@@ -327,7 +335,7 @@ class ChatWidget(QWidget):
         self.btn_delete_message.setVisible(False)
         self.change_message_input.setVisible(False)
         self.lbl_info_chat.setText(f'{responce["GROUP"]}')
-        self.messages = []
+        self.messages.clear()
         messages = responce['MESSAGES']
         for index in range(len(messages)):
             self.messages.append({"CREATE_AT": messages[index]["CREATE_AT"], "ID": messages[index]["ID"],
@@ -467,6 +475,9 @@ class ChatWidget(QWidget):
         self.change_message_input.setVisible(False)
         self.search_input.setText("")
         self.chat.setCurrentIndex(QModelIndex())
+
+    def view_profile(self):
+        self.client.view_profile(username=self.client.receiver_name)
 
 
 
